@@ -35,7 +35,8 @@ type ResponseType = {
 const apitoDataProvider = (
   apiUrl: string,
   token: string,
-  tenant: boolean
+  tenant: boolean,
+  tokenKey: string
 ): ExtendedDataProvider => {
   const client = new Client({
     url: apiUrl,
@@ -47,7 +48,7 @@ const apitoDataProvider = (
     getApiUrl: () => apiUrl,
     getApiClient: () => {
       if (tenant) {
-        token = localStorage.getItem(TOKEN_KEY) ?? "not-set";
+        token = localStorage.getItem(tokenKey) ?? "not-set";
       }
       return new Client({
         url: apiUrl,

@@ -17,7 +17,10 @@
     "lint": "tsdx lint",
     "prepare": "tsdx build",
     "size": "size-limit",
-    "analyze": "size-limit --why"
+    "analyze": "size-limit --why",
+    "docs:dev": "docz dev",
+    "docs:build": "docz build",
+    "deploy:docs": "gh-pages -d .docz/dist"
   },
   "peerDependencies": {
     "react": ">=16"
@@ -50,6 +53,7 @@
     "@size-limit/preset-small-lib": "^11.1.6",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
+    "gh-pages": "^6.3.0",
     "husky": "^9.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
