@@ -5,148 +5,121 @@ import {
   CreateParams,
   CreateResponse,
   CustomParams,
-  DataProvider,
   GetListParams,
   GetListResponse,
   GetOneParams,
   GetOneResponse,
-  HttpError,
+  HttpError
 } from "@refinedev/core";
 import { Client, CombinedError, fetchExchange, gql } from "@urql/core";
 import pluralize from "pluralize";
+import {
+  ApitoGraphQLError,
+  CustomResponse,
+  ExtendedDataProvider,
+  ResponseType,
+  SingleResponseType
+} from "./types";
 
 /*
 Apito Typical Graphql Error Response:
 {
-  "data": {
-    "deleteTestLabel": null
-  },
-  "errors": [
-    {
-      "message": "there are 1 relations that are using this document, please delete them first",
-      "locations": [
-        {
-          "line": 2,
-          "column": 3
-        }
-      ],
-      "path": [
-        "deleteTestLabel"
-      ]
-    }
-  ]
+"data": {
+  "deleteTestLabel": null
+},
+"errors": [
+  {
+    "message": "there are 1 relations that are using this document, please delete them first",
+    "locations": [
+      {
+        "line": 2,
+        "column": 3
+      }
+    ],
+    "path": [
+      "deleteTestLabel"
+    ]
+  }
+]
 }
 */
 
 /*
 Apito Typical Graphql Success Response:
 {
-  "data": {
-    "testLabelList": [
-      {
-        "data": {
-          "description": {
-            "text": null
-          },
-          "measure_unit": "mmol/l",
-          "name": "Corres. Urine Sugar",
-          "reference_range": "<7.8 mmol/l"
+"data": {
+  "testLabelList": [
+    {
+      "data": {
+        "description": {
+          "text": null
         },
-        "id": "1ac785e3-a190-44a5-bc36-d858df8a3868",
-        "meta": {
-          "created_at": "2025-03-10T08:10:55Z",
-          "status": true,
-          "updated_at": "2025-03-10T08:10:55Z"
-        }
+        "measure_unit": "mmol/l",
+        "name": "Corres. Urine Sugar",
+        "reference_range": "<7.8 mmol/l"
       },
-      {
-        "data": {
-          "description": {
-            "text": null
-          },
-          "measure_unit": "mmol/l",
-          "name": "P Glucose (F)",
-          "reference_range": "3.6-5.6 mmol/l"
-        },
-        "id": "0c7e3a18-765c-4fed-a091-768578804fdc",
-        "meta": {
-          "created_at": "2025-03-10T08:10:05Z",
-          "status": true,
-          "updated_at": "2025-03-10T08:10:05Z"
-        }
-      },
-      {
-        "data": {
-          "description": {
-            "text": null
-          },
-          "measure_unit": "mmol/L",
-          "name": "T4",
-          "reference_range": "3.6-5.6 mmol/L"
-        },
-        "id": "13123014-8bb7-4850-9699-8eb4f0607305",
-        "meta": {
-          "created_at": "2025-02-17T13:32:56Z",
-          "status": true,
-          "updated_at": "2025-02-17T13:32:56Z"
-        }
-      },
-      {
-        "data": {
-          "description": {
-            "text": null
-          },
-          "measure_unit": "mg/dl",
-          "name": "S. Creatinine",
-          "reference_range": "0.6-1.2 mg/dl"
-        },
-        "id": "c9c9c9c9-c9c9-c9c9-c9c9-c9c9c9c9c9c9",
-        "meta": {
-          "created_at": "2025-02-17T13:32:56Z",
-          "status": true,
-          "updated_at": "2025-02-17T13:32:56Z"
-        }
+      "id": "1ac785e3-a190-44a5-bc36-d858df8a3868",
+      "meta": {
+        "created_at": "2025-03-10T08:10:55Z",
+        "status": true,
+        "updated_at": "2025-03-10T08:10:55Z"
       }
-    ],
-    "testLabelListCount": {
-      "total": 4
+    },
+    {
+      "data": {
+        "description": {
+          "text": null
+        },
+        "measure_unit": "mmol/l",
+        "name": "P Glucose (F)",
+        "reference_range": "3.6-5.6 mmol/l"
+      },
+      "id": "0c7e3a18-765c-4fed-a091-768578804fdc",
+      "meta": {
+        "created_at": "2025-03-10T08:10:05Z",
+        "status": true,
+        "updated_at": "2025-03-10T08:10:05Z"
+      }
+    },
+    {
+      "data": {
+        "description": {
+          "text": null
+        },
+        "measure_unit": "mmol/L",
+        "name": "T4",
+        "reference_range": "3.6-5.6 mmol/L"
+      },
+      "id": "13123014-8bb7-4850-9699-8eb4f0607305",
+      "meta": {
+        "created_at": "2025-02-17T13:32:56Z",
+        "status": true,
+        "updated_at": "2025-02-17T13:32:56Z"
+      }
+    },
+    {
+      "data": {
+        "description": {
+          "text": null
+        },
+        "measure_unit": "mg/dl",
+        "name": "S. Creatinine",
+        "reference_range": "0.6-1.2 mg/dl"
+      },
+      "id": "c9c9c9c9-c9c9-c9c9-c9c9-c9c9c9c9c9c9",
+      "meta": {
+        "created_at": "2025-02-17T13:32:56Z",
+        "status": true,
+        "updated_at": "2025-02-17T13:32:56Z"
+      }
     }
+  ],
+  "testLabelListCount": {
+    "total": 4
   }
 }
+}
 */
-
-export type CustomResponse<TData = BaseRecord> = {
-  data: TData;
-};
-
-export type ExtendedDataProvider = DataProvider & {
-  getApiClient: () => Client;
-  getToken: () => string;
-};
-
-export type SingleResponseType = {
-  id: string | undefined;
-  data: any;
-  meta?: {
-    totalCount?: number;
-    createdAt?: string;
-    createdBy?: string;
-  };
-  total: number;
-};
-
-type ResponseType = {
-  [key: string]: SingleResponseType;
-};
-
-/**
- * Type for Apito GraphQL errors
- */
-type ApitoGraphQLError = {
-  message: string;
-  locations?: { line: number; column: number }[];
-  path?: string[];
-};
 
 /**
  * Handles GraphQL errors from Apito responses
@@ -188,8 +161,6 @@ const handleGraphQLError = (error: CombinedError | undefined): HttpError => {
 const apitoDataProvider = (
   apiUrl: string,
   token: string,
-  tenant: boolean,
-  tokenKey: string
 ): ExtendedDataProvider => {
   const client = new Client({
     url: apiUrl,
@@ -200,9 +171,6 @@ const apitoDataProvider = (
   return {
     getApiUrl: () => apiUrl,
     getApiClient: () => {
-      if (tenant) {
-        token = localStorage.getItem(tokenKey) ?? "not-set";
-      }
       return new Client({
         url: apiUrl,
         exchanges: [fetchExchange],
@@ -270,7 +238,6 @@ const apitoDataProvider = (
                       created_at
                       status
                       updated_at
-                  }
                   }
               }
               ${resource}ListCount(connection: $connection _key: $_keyCount where: $whereCount, page: $page, limit: $limit) {
