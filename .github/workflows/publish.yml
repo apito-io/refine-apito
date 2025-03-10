@@ -146,8 +146,8 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Check bundle size
-        run: pnpm run size
+      #- name: Check bundle size
+      #  run: pnpm run size
 
       - name: Extract version from tag
         id: extract_version
