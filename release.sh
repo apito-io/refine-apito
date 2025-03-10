@@ -27,7 +27,7 @@ echo ""
 npm version $VERSION --no-git-tag-version
 
 # Commit the change
-git add package.json
+git add .
 git commit -m "$COMMIT_MSG"
 
 # Create and push the tag
