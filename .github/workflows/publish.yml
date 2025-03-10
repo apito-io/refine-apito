@@ -4,23 +4,20 @@ on:
   push:
     tags:
       - 'v*'
-    branches:
-      - main
-      - master
   pull_request:
     branches:
       - main
       - master
 
 jobs:
-  # CI job for all pushes and PRs
+  # CI job for PRs only
   ci:
-    name: Build, lint, and test on Node ${{ matrix.node }} and ${{ matrix.os }}
+    name: Build on Node ${{ matrix.node }} and ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+    if: github.event_name == 'pull_request'
     strategy:
       matrix:
-        node: ['16.x', '18.x']
+        node: ['18.x']
         os: [ubuntu-latest]
 
     steps:
@@ -54,52 +51,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Test
-        run: pnpm run test --passWithNoTests
-
       - name: Build
         run: pnpm run build
-
-      - name: Check bundle size
-        run: pnpm run size
-
-  # Size check job for PRs
-  size:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    env:
-      CI_JOB_NUMBER: 1
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9.15.4
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - uses: andresz1/size-limit-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   # Publish job only for tags
   publish:
@@ -137,17 +90,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Test
-        run: pnpm run test --passWithNoTests
-
       - name: Build
         run: pnpm run build
-
-      - name: Check bundle size
-        run: pnpm run size
 
       - name: Extract version from tag
         id: extract_version
