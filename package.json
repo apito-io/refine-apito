@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -23,7 +23,8 @@
     "deploy:docs": "gh-pages -d .docz/dist"
   },
   "peerDependencies": {
-    "react": ">=16"
+    "react": ">=16",
+    "@refinedev/core": "^4.0.0"
   },
   "husky": {
     "hooks": {
@@ -60,13 +61,31 @@
     "size-limit": "^11.1.6",
     "tsdx": "^0.14.1",
     "tslib": "^2.8.1",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "@refinedev/core": "^4.57.5"
   },
   "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0",
   "dependencies": {
-    "@refinedev/core": "^4.57.5",
     "@types/pluralize": "^0.0.33",
     "@urql/core": "^5.1.0",
     "pluralize": "^8.0.0"
-  }
+  },
+  "keywords": [
+    "refine",
+    "refinedev",
+    "apito",
+    "headless-cms",
+    "graphql",
+    "data-provider",
+    "react"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/apito-io/refine-apito.git"
+  },
+  "bugs": {
+    "url": "https://github.com/apito-io/refine-apito/issues"
+  },
+  "homepage": "https://github.com/apito-io/refine-apito#readme",
+  "description": "A data provider for Refine that connects to Apito - a headless CMS and backend builder."
 }

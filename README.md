@@ -1,10 +1,10 @@
 # TSDX React User Guide
 
-Congrats! You just saved yourself hours of work by bootstrapping this project with TSDX. Let’s get you oriented with what’s here and how to use it.
+Congrats! You just saved yourself hours of work by bootstrapping this project with TSDX. Let's get you oriented with what's here and how to use it.
 
-> This TSDX setup is meant for developing React component libraries (not apps!) that can be published to NPM. If you’re looking to build a React-based app, you should use `create-react-app`, `razzle`, `nextjs`, `gatsby`, or `react-static`.
+> This TSDX setup is meant for developing React component libraries (not apps!) that can be published to NPM. If you're looking to build a React-based app, you should use `create-react-app`, `razzle`, `nextjs`, `gatsby`, or `react-static`.
 
-> If you’re new to TypeScript and React, checkout [this handy cheatsheet](https://github.com/sw-yx/react-typescript-cheatsheet/)
+> If you're new to TypeScript and React, checkout [this handy cheatsheet](https://github.com/sw-yx/react-typescript-cheatsheet/)
 
 ## Commands
 
@@ -158,3 +158,140 @@ Change the `alias` to point to where those packages are actually installed. This
 ```
 
 An alternative to fixing this problem would be to remove aliases altogether and define the dependencies referenced as aliases as dev dependencies instead. [However, that might cause other problems.](https://github.com/palmerhq/tsdx/issues/64)
+
+# Refine Apito Data Provider
+
+[![npm version](https://badge.fury.io/js/refine-apito.svg)](https://badge.fury.io/js/refine-apito)
+[![npm](https://img.shields.io/npm/dt/refine-apito.svg)](https://www.npmjs.com/package/refine-apito)
+
+A data provider for [Refine](https://refine.dev/) that connects to [Apito](https://apito.io/) - a headless CMS and backend builder.
+
+## Features
+
+- 🚀 Full support for all Refine data provider methods
+- 🔄 Automatic GraphQL query generation for Apito
+- 🔒 Authentication support
+- 🛠️ Comprehensive error handling for GraphQL and network errors
+- 📝 Support for custom GraphQL queries and mutations
+
+## Installation
+
+```bash
+npm install refine-apito
+# or
+yarn add refine-apito
+# or
+pnpm add refine-apito
+```
+
+## Usage
+
+```tsx
+import { Refine } from '@refinedev/core';
+import { dataProvider } from 'refine-apito';
+
+const App = () => {
+  return (
+    <Refine
+      dataProvider={dataProvider(
+        'https://api.apito.io/secured/graphql', // Your Apito GraphQL endpoint
+        'YOUR_API_TOKEN', // Your Apito API token
+        false, // Whether to use tenant-based authentication
+        'apito_token' // Local storage key for tenant token (if tenant is true)
+      )}
+      // ... other Refine configurations
+    >
+      {/* ... */}
+    </Refine>
+  );
+};
+```
+
+## API Reference
+
+### `dataProvider(apiUrl, token, tenant, tokenKey)`
+
+Creates a data provider for Refine that connects to Apito.
+
+#### Parameters
+
+- `apiUrl` (string): The URL of your Apito GraphQL API endpoint.
+- `token` (string): Your Apito API token for authentication.
+- `tenant` (boolean): Whether to use tenant-based authentication. If true, the token will be retrieved from localStorage.
+- `tokenKey` (string): The key to use for storing the token in localStorage when using tenant-based authentication.
+
+#### Returns
+
+A Refine data provider object with the following methods:
+
+- `getList`: Fetches a list of resources with pagination, sorting, and filtering.
+- `getOne`: Fetches a single resource by ID.
+- `create`: Creates a new resource.
+- `createMany`: Creates multiple resources at once.
+- `update`: Updates an existing resource.
+- `deleteOne`: Deletes a resource by ID.
+- `custom`: Executes a custom GraphQL query.
+
+### Additional Methods
+
+The data provider also includes these utility methods:
+
+- `getApiClient()`: Returns the GraphQL client instance.
+- `getToken()`: Returns the current API token.
+
+## Advanced Usage
+
+### Custom Fields
+
+You can specify which fields to include in the response by providing a `fields` array in the `meta` parameter:
+
+```tsx
+const { data } = useList({
+  resource: 'products',
+  meta: {
+    fields: ['name', 'price', 'description', 'category'],
+  },
+});
+```
+
+### Custom GraphQL Queries
+
+For more complex queries, you can provide your own GraphQL query:
+
+```tsx
+const { data } = useList({
+  resource: 'products',
+  meta: {
+    gqlQuery: gql`
+      query GetProducts($where: PRODUCTS_INPUT_WHERE_PAYLOAD) {
+        productsList(where: $where) {
+          id
+          data {
+            name
+            price
+            category
+          }
+          meta {
+            created_at
+          }
+        }
+        productsListCount {
+          total
+        }
+      }
+    `,
+    variables: {
+      where: { category: { eq: 'electronics' } },
+    },
+    queryKey: 'productsList',
+  },
+});
+```
+
+### Error Handling
+
+The data provider includes comprehensive error handling for both GraphQL and network errors. All errors are converted to Refine's `HttpError` format for consistent error handling throughout your application.
+
+## License
+
+MIT

@@ -3,9 +3,9 @@ import {
   GitHubBanner,
   WelcomePage,
   Authenticated,
-} from "@refinedev/core";
-import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
-import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
+} from '@refinedev/core';
+import { DevtoolsPanel, DevtoolsProvider } from '@refinedev/devtools';
+import { RefineKbar, RefineKbarProvider } from '@refinedev/kbar';
 
 import {
   AuthPage,
@@ -13,28 +13,38 @@ import {
   useNotificationProvider,
   ThemedLayoutV2,
   ThemedSiderV2,
-} from "@refinedev/antd";
-import "@refinedev/antd/dist/reset.css";
+} from '@refinedev/antd';
+import '@refinedev/antd/dist/reset.css';
 
-import dataProvider, { GraphQLClient } from "@refinedev/graphql";
-import { App as AntdApp } from "antd";
-import { BrowserRouter, Route, Routes, Outlet } from "react-router";
+import { dataProvider } from '../../src';
+import { App as AntdApp } from 'antd';
+import { BrowserRouter, Route, Routes, Outlet } from 'react-router';
 import routerBindings, {
   NavigateToResource,
   CatchAllNavigate,
   UnsavedChangesNotifier,
   DocumentTitleHandler,
-} from "@refinedev/react-router";
-import { ColorModeContextProvider } from "./contexts/color-mode";
-import { Header } from "./components/header";
-import { Login } from "./pages/login";
-import { Register } from "./pages/register";
-import { ForgotPassword } from "./pages/forgotPassword";
-import { authProvider } from "./authProvider";
-const API_URL = "https://your-graphql-url/graphql";
+} from '@refinedev/react-router';
+import { ColorModeContextProvider } from './contexts/color-mode';
+import { Header } from './components/header';
+import { Login } from './pages/login';
+import { Register } from './pages/register';
+import { ForgotPassword } from './pages/forgotPassword';
+import { authProvider } from './authProvider';
+import ProductList from './pages/products';
+import ProductCreate from './pages/products/create';
 
-const client = new GraphQLClient(API_URL);
-const gqlDataProvider = dataProvider(client);
+const APITO_API_URL = 'https://api.apito.io/secured/graphql';
+const APITO_API_TOKEN = 'YOUR_API_TOKEN';
+const USE_TENANT = false;
+const TOKEN_KEY = 'apito_token';
+
+const apitoDataProvider = dataProvider(
+  APITO_API_URL,
+  APITO_API_TOKEN,
+  USE_TENANT,
+  TOKEN_KEY
+);
 
 function App() {
   return (
@@ -45,19 +55,43 @@ function App() {
           <AntdApp>
             <DevtoolsProvider>
               <Refine
-                dataProvider={gqlDataProvider}
+                dataProvider={apitoDataProvider}
                 notificationProvider={useNotificationProvider}
                 routerProvider={routerBindings}
                 authProvider={authProvider}
+                resources={[
+                  {
+                    name: 'products',
+                    list: '/products',
+                    show: '/products/show/:id',
+                    create: '/products/create',
+                    edit: '/products/edit/:id',
+                  },
+                  {
+                    name: 'categories',
+                    list: '/categories',
+                    show: '/categories/show/:id',
+                    create: '/categories/create',
+                    edit: '/categories/edit/:id',
+                  },
+                ]}
                 options={{
                   syncWithLocation: true,
                   warnWhenUnsavedChanges: true,
                   useNewQueryKeys: true,
-                  projectId: "0olS4L-PR8cA6-eI99Wu",
+                  projectId: '0olS4L-PR8cA6-eI99Wu',
                 }}
               >
                 <Routes>
                   <Route index element={<WelcomePage />} />
+
+                  {/* Product routes */}
+                  <Route path="/products">
+                    <Route index element={<ProductList />} />
+                    <Route path="create" element={<ProductCreate />} />
+                  </Route>
+
+                  {/* Add more routes for other resources */}
                 </Routes>
                 <RefineKbar />
                 <UnsavedChangesNotifier />

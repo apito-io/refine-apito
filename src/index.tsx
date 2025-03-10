@@ -1,1 +1,1 @@
-export { default as dataProvider } from './provider';
+export { default as apitoDataProvider } from './provider';
