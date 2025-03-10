@@ -292,6 +292,58 @@ const { data } = useList({
 
 The data provider includes comprehensive error handling for both GraphQL and network errors. All errors are converted to Refine's `HttpError` format for consistent error handling throughout your application.
 
+## Contributing & Development
+
+### Local Development
+
+To develop this package locally:
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development mode
+pnpm start
+
+# Run tests
+pnpm test
+
+# Build the package
+pnpm build
+
+# Check bundle size
+pnpm size
+```
+
+### Releasing New Versions
+
+This package uses GitHub Actions for automated releases. To release a new version:
+
+1. Update the version in `package.json`
+2. Commit your changes
+3. Create and push a new tag:
+
+```bash
+git tag v0.1.2  # Use appropriate version
+git push origin v0.1.2
+```
+
+The GitHub workflow will automatically:
+
+- Build and test the package
+- Publish to npm
+- Create a GitHub release
+
+Alternatively, you can publish manually:
+
+```bash
+# Build the package
+pnpm build
+
+# Publish to npm
+npm publish
+```
+
 ## License
 
 MIT
