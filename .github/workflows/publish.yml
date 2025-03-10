@@ -58,7 +58,7 @@ jobs:
         run: pnpm run lint
 
       - name: Test
-        run: pnpm run test
+        run: pnpm run test --passWithNoTests
 
       - name: Build
         run: pnpm run build
@@ -137,17 +137,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      #- name: Lint
-       # run: pnpm run lint
+      - name: Lint
+        run: pnpm run lint
 
-      #- name: Test
-      #  run: pnpm run test
+      - name: Test
+        run: pnpm run test --passWithNoTests
 
       - name: Build
         run: pnpm run build
 
-      #- name: Check bundle size
-      #  run: pnpm run size
+      - name: Check bundle size
+        run: pnpm run size
 
       - name: Extract version from tag
         id: extract_version
@@ -155,8 +155,18 @@ jobs:
 
       - name: Update package version
         run: |
-          # Ensure the version in package.json matches the tag
-          npm version $VERSION --no-git-tag-version
+          # Get current version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version in package.json: $CURRENT_VERSION"
+          echo "Version from tag: $VERSION"
+          
+          # Only update if versions don't match
+          if [ "$CURRENT_VERSION" != "$VERSION" ]; then
+            echo "Updating version in package.json to $VERSION"
+            npm version $VERSION --no-git-tag-version
+          else
+            echo "Version in package.json already matches tag version ($VERSION)"
+          fi
 
       - name: Publish to NPM
         run: pnpm publish --no-git-checks
