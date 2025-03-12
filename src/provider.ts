@@ -244,7 +244,6 @@ const apitoDataProvider = (
                   total
               }
           }`;
-
           // _key filter
           let _key = null;
 
@@ -437,8 +436,8 @@ const apitoDataProvider = (
           singularResource.charAt(0).toUpperCase() + singularResource.slice(1);
 
         const mutation = gql`
-                mutation Create${name}List($payloads: [${name}List_Create_Payload!]!, $connect: ${name}_Relation_Connect_Payload) {
-                    create${name}List(payloads: $payloads, connect: $connect, status: published) {
+                mutation Upsert${name}List($payloads: [${name}List_Upsert_Payload!]!, $connect: ${name}_Relation_Connect_Payload) {
+                    upsert${name}List(payloads: $payloads, connect: $connect, status: published) {
                         id
                         data {
                             ${fields.join("\n")}
@@ -465,7 +464,7 @@ const apitoDataProvider = (
           return Promise.reject(handleGraphQLError(response.error));
         }
 
-        const data = (response?.data?.[`create${name}List`] ?? []) as unknown as TData[];
+        const data = (response?.data?.[`upsert${name}List`] ?? []) as unknown as TData[];
         return { data: data };
       } catch (error) {
         if ((error as any).statusCode !== undefined) {
