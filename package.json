@@ -1,5 +1,5 @@
 {
-  "version": "0.1.13",
+  "version": "0.1.14",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -58,7 +58,7 @@
     }
   ],
   "devDependencies": {
-    "@refinedev/core": "4.57.5",
+    "@refinedev/core": "4.57.7",
     "@size-limit/preset-small-lib": "11.1.6",
     "@types/jest": "^29.5.14",
     "@types/react": "19.0.8",
