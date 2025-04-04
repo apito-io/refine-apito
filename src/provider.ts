@@ -489,7 +489,14 @@ const apitoDataProvider = (
                   }
               `;
 
-                const variableData = variables as Record<string, any>;
+                // Clean up the array by filtering out empty objects, null, or undefined values
+                const variableData = Array.isArray(variables)
+                    ? (variables as any[]).filter(item =>
+                        item !== null &&
+                        item !== undefined &&
+                        (typeof item !== 'object' || Object.keys(item).length > 0)
+                    )
+                    : variables as Record<string, any>;
 
                 const response = await client
                     .mutation<ResponseType>(mutation, {
@@ -699,6 +706,14 @@ const apitoDataProvider = (
                     variables = {
                         ...variables,
                         where: where || {}
+                    };
+                }
+
+                // Convert payloads object with numeric keys to array
+                if (variables?.payloads && typeof variables.payloads === 'object' && !Array.isArray(variables.payloads)) {
+                    variables = {
+                        ...variables,
+                        payloads: Object.values(variables.payloads)
                     };
                 }
 
