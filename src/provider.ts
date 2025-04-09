@@ -216,43 +216,37 @@ const apitoDataProvider = (
                     const pluralResource =
                         pluralize.plural(resource).charAt(0).toUpperCase() +
                         pluralize.plural(resource).slice(1);
-                    query = gql`
-                query Get${pluralResource}(
-                $_key: ${resource.toUpperCase()}LIST_KEY_CONDITION
-                $connection: ${resource.toUpperCase()}_CONNECTION_FILTER_CONDITION
-                $where: ${resource.toUpperCase()}LIST_INPUT_WHERE_PAYLOAD
-                $_keyCount: ${resource.toUpperCase()}LIST_COUNT_KEY_CONDITION
-                $whereCount: ${resource.toUpperCase()}LIST_COUNT_INPUT_WHERE_PAYLOAD
-                $sort: ${resource.toUpperCase()}LIST_INPUT_SORT_PAYLOAD
-                $page: Int
-                $limit: Int
-                $local: LOCAL_TYPE_ENUM
-            ) {
-                ${resource}List(connection: $connection _key: $_key where: $where, sort: $sort, page: $page, limit: $limit, local: $local) {
-                    id
-                    data {
-                        ${fields.join("\n")}
-                    }
-                    ${Object.keys(connectionFields).map((key) => `${key} { ${connectionFields[key]} }`).join("\n")}
-                    meta {
-                        created_at
-                        status
-                        updated_at
-                    }
-                }
-                ${resource}ListCount(connection: $connection _key: $_keyCount where: $whereCount, page: $page, limit: $limit) {
-                    total
-                }
-            }`;
+
                     // _key filter
                     let _key = null;
-
+                    let relationWhere: Record<string, any> | null = null;
                     // Transform filters into a `where` object
                     const where = filters?.reduce(
                         (acc: Record<string, any>, filter: any) => {
                             const { field, operator, value } = filter;
                             if (field === '_key') {
                                 _key = { [operator || "eq"]: value };
+                                return acc;
+                            }
+                            if (field.includes('relation.')) {
+                                const relationPath = field.replace('relation.', '').split('.');
+                                if (!relationWhere) {
+                                    relationWhere = {};
+                                }
+
+                                // Build nested object structure
+                                let current: Record<string, any> = relationWhere;
+                                for (let i = 0; i < relationPath.length - 1; i++) {
+                                    const part = relationPath[i];
+                                    if (!current[part]) {
+                                        current[part] = {};
+                                    }
+                                    current = current[part];
+                                }
+
+                                const lastPart = relationPath[relationPath.length - 1];
+                                // Handle dynamic operator (eq, contains, etc.)
+                                current[lastPart] = { [operator]: value };
                                 return acc;
                             }
                             if (operator && value !== undefined) {
@@ -267,24 +261,83 @@ const apitoDataProvider = (
                         {}
                     );
 
-                    // Transform sorters into a `sort` object
-                    const sort = sorters?.reduce(
-                        (acc: Record<string, any>, sorter: any) => {
-                            const { field, order } = sorter;
-                            if (field && order) {
-                                acc[field] = order.toUpperCase(); // Convert to ASC/DESC
+                    const hasKey = _key !== null;
+                    const hasRelationWhere = relationWhere !== null;
+
+                    const queryVariables = [
+                        hasKey ? `$_key: ${resource.toUpperCase()}LIST_KEY_CONDITION` : null,
+                        `$connection: ${resource.toUpperCase()}_CONNECTION_FILTER_CONDITION`,
+                        `$where: ${resource.toUpperCase()}LIST_INPUT_WHERE_PAYLOAD`,
+                        hasRelationWhere ? `$relationWhere: ${resource.toUpperCase()}_WHERE_RELATION_FILTER_CONDITION` : null,
+                        hasKey ? `$_keyCount: ${resource.toUpperCase()}LIST_COUNT_KEY_CONDITION` : null,
+                        `$whereCount: ${resource.toUpperCase()}LIST_COUNT_INPUT_WHERE_PAYLOAD`,
+                        hasRelationWhere ? `$relationWhereCount: ${resource.toUpperCase()}_WHERE_RELATION_FILTER_CONDITION` : null,
+                        `$sort: ${resource.toUpperCase()}LIST_INPUT_SORT_PAYLOAD`,
+                        `$page: Int`,
+                        `$limit: Int`,
+                        `$local: LOCAL_TYPE_ENUM`
+                    ].filter(Boolean).join('\n');
+
+                    const queryArguments = [
+                        hasKey ? '_key: $_key' : null,
+                        'connection: $connection',
+                        'where: $where',
+                        hasRelationWhere ? 'relation: $relationWhere' : null,
+                        'sort: $sort',
+                        'page: $page',
+                        'limit: $limit',
+                        'local: $local'
+                    ].filter(Boolean).join(', ');
+
+                    const countArguments = [
+                        hasKey ? '_key: $_keyCount' : null,
+                        'connection: $connection',
+                        'where: $whereCount',
+                        hasRelationWhere ? 'relation: $relationWhereCount' : null,
+                        'page: $page',
+                        'limit: $limit'
+                    ].filter(Boolean).join(', ');
+
+                    query = gql`
+                        query Get${pluralResource}(
+                            ${queryVariables}
+                        ) {
+                            ${resource}List(${queryArguments}) {
+                                id
+                                data {
+                                    ${fields.join("\n")}
+                                }
+                                ${Object.keys(connectionFields).map((key) => `${key} { ${connectionFields[key]} }`).join("\n")}
+                                meta {
+                                    created_at
+                                    status
+                                    updated_at
+                                }
                             }
-                            return acc;
-                        },
-                        {}
-                    );
+                            ${resource}ListCount(${countArguments}) {
+                                total
+                            }
+                        }
+                    `;
 
                     variables = {
+                        ...(hasKey && { _key: _key }),
                         connection: reverseLookup || {},
-                        _key: _key || {},
                         where: where || {},
+                        ...(hasRelationWhere && { relationWhere: relationWhere }),
                         whereCount: where || {},
-                        sort: sort || {},
+                        ...(hasKey && { _keyCount: _key }),
+                        ...(hasRelationWhere && { relationWhereCount: relationWhere }),
+                        sort: sorters?.reduce(
+                            (acc: Record<string, any>, sorter: any) => {
+                                const { field, order } = sorter;
+                                if (field && order) {
+                                    acc[field] = order.toUpperCase(); // Convert to ASC/DESC
+                                }
+                                return acc;
+                            },
+                            {}
+                        ),
                         page: pagination?.current,
                         limit: pagination?.pageSize,
                     };
