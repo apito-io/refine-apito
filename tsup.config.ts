@@ -9,4 +9,7 @@ export default defineConfig({
     clean: true,
     treeshake: true,
     external: ['react', '@refinedev/core'],
+    outExtension: ({ format }) => ({
+        js: format === 'cjs' ? '.js' : '.mjs',
+    }),
 }); 

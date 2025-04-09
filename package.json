@@ -1,8 +1,16 @@
 {
-  "version": "0.0.19",
+  "version": "0.0.20",
   "license": "MIT",
   "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "files": [
     "dist",
     "src"
@@ -46,7 +54,6 @@
   },
   "name": "refine-apito",
   "author": "fahim",
-  "module": "dist/refine-apito.esm.js",
   "size-limit": [
     {
       "path": "dist/index.js",
