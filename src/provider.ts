@@ -217,49 +217,113 @@ const apitoDataProvider = (
                         pluralize.plural(resource).charAt(0).toUpperCase() +
                         pluralize.plural(resource).slice(1);
 
-                    // _key filter
+                    // Helper function to process filters recursively
+                    const processFilter = (filter: any): any => {
+                        const { field, operator, value } = filter;
+
+                        // Handle OR operation
+                        if (operator === 'or' && Array.isArray(value)) {
+                            const orConditions: Record<string, any> = {};
+                            value.forEach(condition => {
+                                const { field, operator, value } = condition;
+                                if (field && operator && value !== undefined) {
+                                    // Adjust `data.name` to `name`
+                                    const adjustedField = field.startsWith("data.")
+                                        ? field.replace("data.", "")
+                                        : field;
+                                    orConditions[adjustedField] = { [operator]: value };
+                                }
+                            });
+                            return { OR: orConditions };
+                        }
+
+                        // Handle AND operation
+                        if (operator === 'and' && Array.isArray(value)) {
+                            const andConditions: Record<string, any> = {};
+                            value.forEach(condition => {
+                                const { field, operator, value } = condition;
+                                if (field && operator && value !== undefined) {
+                                    // Adjust `data.name` to `name`
+                                    const adjustedField = field.startsWith("data.")
+                                        ? field.replace("data.", "")
+                                        : field;
+                                    andConditions[adjustedField] = { [operator]: value };
+                                }
+                            });
+                            return { AND: andConditions };
+                        }
+
+                        // Handle regular field filters
+                        if (field === '_key') {
+                            return { _key: { [operator || "eq"]: value } };
+                        }
+
+                        if (field && field.includes('relation.')) {
+                            const relationPath = field.replace('relation.', '').split('.');
+                            const relationCondition: Record<string, any> = {};
+
+                            // Build nested object structure
+                            let current: Record<string, any> = relationCondition;
+                            for (let i = 0; i < relationPath.length - 1; i++) {
+                                const part = relationPath[i];
+                                if (!current[part]) {
+                                    current[part] = {};
+                                }
+                                current = current[part];
+                            }
+
+                            const lastPart = relationPath[relationPath.length - 1];
+                            if (operator && value !== undefined) {
+                                current[lastPart] = { [operator]: value };
+                            }
+
+                            return { relation: relationCondition };
+                        }
+
+                        if (operator && value !== undefined) {
+                            // Adjust `data.name` to `name`
+                            const adjustedField = field.startsWith("data.")
+                                ? field.replace("data.", "")
+                                : field;
+                            return { [adjustedField]: { [operator]: value } };
+                        }
+
+                        return {};
+                    };
+
+                    // Process filters
                     let _key = null;
                     let relationWhere: Record<string, any> | null = null;
-                    // Transform filters into a `where` object
-                    const where = filters?.reduce(
-                        (acc: Record<string, any>, filter: any) => {
-                            const { field, operator, value } = filter;
-                            if (field === '_key') {
-                                _key = { [operator || "eq"]: value };
-                                return acc;
+                    let where: Record<string, any> = {};
+
+                    if (filters && filters.length > 0) {
+                        filters.forEach(filter => {
+                            const processed = processFilter(filter);
+
+                            // Extract _key if present
+                            if (processed._key) {
+                                _key = processed._key;
                             }
-                            if (field.includes('relation.')) {
-                                const relationPath = field.replace('relation.', '').split('.');
+                            // Extract relation if present
+                            else if (processed.relation) {
                                 if (!relationWhere) {
                                     relationWhere = {};
                                 }
-
-                                // Build nested object structure
-                                let current: Record<string, any> = relationWhere;
-                                for (let i = 0; i < relationPath.length - 1; i++) {
-                                    const part = relationPath[i];
-                                    if (!current[part]) {
-                                        current[part] = {};
-                                    }
-                                    current = current[part];
-                                }
-
-                                const lastPart = relationPath[relationPath.length - 1];
-                                // Handle dynamic operator (eq, contains, etc.)
-                                current[lastPart] = { [operator]: value };
-                                return acc;
+                                Object.assign(relationWhere, processed.relation);
                             }
-                            if (operator && value !== undefined) {
-                                // Adjust `data.name` to `name`
-                                const adjustedField = field.startsWith("data.")
-                                    ? field.replace("data.", "")
-                                    : field;
-                                acc[adjustedField] = { [operator || "eq"]: value };
+                            // Handle OR/AND conditions
+                            else if (processed.OR) {
+                                where.OR = processed.OR;
                             }
-                            return acc;
-                        },
-                        {}
-                    );
+                            else if (processed.AND) {
+                                where.AND = processed.AND;
+                            }
+                            // Handle regular conditions
+                            else {
+                                Object.assign(where, processed);
+                            }
+                        });
+                    }
 
                     const hasKey = _key !== null;
                     const hasRelationWhere = relationWhere !== null;
