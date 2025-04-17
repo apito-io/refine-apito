@@ -221,6 +221,22 @@ const apitoDataProvider = (
                     const processFilter = (filter: any): any => {
                         const { field, operator, value } = filter;
 
+                        // Handle special case where operator is "eq" and value is an array
+                        if (operator === 'eq' && Array.isArray(value)) {
+                            // Create a nested object structure for this case
+                            const nestedCondition: Record<string, any> = {};
+                            value.forEach(condition => {
+                                const { field: subField, operator: subOperator, value: subValue } = condition;
+                                if (subField && subOperator && subValue !== undefined) {
+                                    if (!nestedCondition[subField]) {
+                                        nestedCondition[subField] = {};
+                                    }
+                                    nestedCondition[subField][subOperator] = subValue;
+                                }
+                            });
+                            return { [field]: nestedCondition };
+                        }
+
                         // Handle OR operation
                         if (operator === 'or' && Array.isArray(value)) {
                             const orConditions: Record<string, any> = {};
