@@ -246,6 +246,74 @@ The library is organized to make debugging easier:
 
 This separation makes it easier to navigate the code and set breakpoints when debugging.
 
+### Alias Fields
+
+You can also use GraphQL aliases for connection fields by providing `aliasFields` alongside `connectionFields`. This is useful when you want to query the same field with different names or create aliases that point to other fields:
+
+```tsx
+const { data } = useList({
+  resource: 'orders',
+  meta: {
+    fields: ['id', 'total', 'status'],
+    aliasFields: {
+      waiter: 'employee',
+    },
+    connectionFields: {
+      foodList: 'id data { name price }',
+      customer: 'id data { name }',
+      employee: 'id data { full_name }',
+      waiter: 'id data { full_name }',
+    },
+  },
+});
+```
+
+This will generate a GraphQL query like:
+
+```graphql
+{
+  orderList {
+    id
+    data {
+      id
+      total
+      status
+    }
+    foodList {
+      id
+      data {
+        name
+        price
+      }
+    }
+    customer {
+      id
+      data {
+        name
+      }
+    }
+    employee {
+      id
+      data {
+        full_name
+      }
+    }
+    waiter: employee {
+      id
+      data {
+        full_name
+      }
+    }
+  }
+}
+```
+
+In this example:
+
+- `waiter` is defined as an alias that points to the `employee` field
+- The `waiter` connection field specification from `connectionFields` is used for the alias
+- This allows you to get the same employee data under two different names in your response
+
 ## Contributing & Development
 
 ### Local Development

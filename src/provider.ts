@@ -158,6 +158,25 @@ const handleGraphQLError = (error: CombinedError | undefined): HttpError => {
     };
 };
 
+/**
+ * Helper function to generate connection field string with alias support
+ * @param connectionFields The connection fields mapping
+ * @param aliasFields The alias fields mapping
+ * @returns A formatted string for GraphQL query connection fields
+ */
+const generateConnectionFields = (connectionFields: Record<string, string>, aliasFields: Record<string, string>) => {
+    return Object.keys(connectionFields).map((key) => {
+        // Check if this key is defined as an alias in aliasFields
+        if (aliasFields[key]) {
+            // Generate alias syntax: alias: actualField { ... }
+            return `${key}: ${aliasFields[key]} { ${connectionFields[key]} }`;
+        } else {
+            // Generate normal syntax: field { ... }
+            return `${key} { ${connectionFields[key]} }`;
+        }
+    }).join("\n");
+};
+
 const apitoDataProvider = (
     apiUrl: string,
     token: string,
@@ -181,9 +200,11 @@ const apitoDataProvider = (
         async getList<TData extends BaseRecord = BaseRecord>(
             params: GetListParams
         ): Promise<GetListResponse<TData>> {
+
             try {
                 const { resource, filters, sorters, pagination, meta } = params;
                 const connectionFields = meta?.connectionFields || {};
+                const aliasFields = meta?.aliasFields || {};
                 const reverseLookup = meta?.reverseLookup || {};
 
                 let data: TData[] = [];
@@ -387,7 +408,7 @@ const apitoDataProvider = (
                                 data {
                                     ${fields.join("\n")}
                                 }
-                                ${Object.keys(connectionFields).map((key) => `${key} { ${connectionFields[key]} }`).join("\n")}
+                                ${generateConnectionFields(connectionFields, aliasFields)}
                                 meta {
                                     created_at
                                     status
@@ -460,6 +481,7 @@ const apitoDataProvider = (
                 const { resource, id, meta } = params;
                 const fields = meta?.fields || ["id"]; // Fallback to 'id' if fields are not provided
                 const connectionFields = meta?.connectionFields || {};
+                const aliasFields = meta?.aliasFields || {};
                 const singularResource = pluralize.singular(resource);
                 const query = gql`
                   query Get${singularResource.charAt(0).toUpperCase() + singularResource.slice(1)}($id: String!) {
@@ -468,7 +490,7 @@ const apitoDataProvider = (
                           data {
                               ${fields.join("\n")}
                           }
-                          ${Object.keys(connectionFields).map((key) => `${key} { ${connectionFields[key]} }`).join("\n")}
+                          ${generateConnectionFields(connectionFields, aliasFields)}
                           meta {
                               created_at
                               status
