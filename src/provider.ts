@@ -706,17 +706,19 @@ const apitoDataProvider = (
                     };
                 } else {
                     const fields = meta?.fields || ["id"]; // Fallback to 'id' if fields are not provided
+                    const deltaUpdate = meta?.deltaUpdate || false;
                     const singularResource = pluralize.singular(resource);
                     const name =
                         singularResource.charAt(0).toUpperCase() + singularResource.slice(1);
                     query = gql`
                       mutation Update${name}(
-                          $id: String!, 
+                          $id: String!,
+                          $deltaUpdate: Boolean,
                           $payload: ${name}_Update_Payload!, 
                           $connect: ${name}_Relation_Connect_Payload,
                           $disconnect: ${name}_Relation_Disconnect_Payload
                       ) {
-                          update${name}(_id: $id, payload: $payload, connect: $connect, disconnect: $disconnect, status: published) {
+                          update${name}(_id: $id, deltaUpdate: $deltaUpdate, payload: $payload, connect: $connect, disconnect: $disconnect, status: published) {
                               id
                               data {
                                   ${fields.join("\n")}
@@ -731,6 +733,7 @@ const apitoDataProvider = (
                   `;
                     _variables = {
                         id: id,
+                        deltaUpdate: deltaUpdate,
                         payload: (variables as Record<string, any>).data,
                         connect: (variables as Record<string, any>).connect,
                         disconnect: (variables as Record<string, any>).disconnect,
