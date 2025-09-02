@@ -231,21 +231,6 @@ const { data } = useList({
 });
 ```
 
-### Error Handling
-
-The data provider includes comprehensive error handling for both GraphQL and network errors. All errors are converted to Refine's `HttpError` format for consistent error handling throughout your application.
-
-### Code Organization for Debugging
-
-The library is organized to make debugging easier:
-
-- **types.ts**: Contains all TypeScript type definitions
-- **provider.ts**: Contains the main data provider implementation
-- **debug-provider.ts**: Contains a debug version with console logs
-- **index.tsx**: Exports everything for external use
-
-This separation makes it easier to navigate the code and set breakpoints when debugging.
-
 ### Alias Fields
 
 You can also use GraphQL aliases for connection fields by providing `aliasFields` alongside `connectionFields`. This is useful when you want to query the same field with different names or create aliases that point to other fields:
@@ -313,6 +298,22 @@ In this example:
 - `waiter` is defined as an alias that points to the `employee` field
 - The `waiter` connection field specification from `connectionFields` is used for the alias
 - This allows you to get the same employee data under two different names in your response
+
+
+### Error Handling
+
+The data provider includes comprehensive error handling for both GraphQL and network errors. All errors are converted to Refine's `HttpError` format for consistent error handling throughout your application.
+
+### Code Organization for Debugging
+
+The library is organized to make debugging easier:
+
+- **types.ts**: Contains all TypeScript type definitions
+- **provider.ts**: Contains the main data provider implementation
+- **debug-provider.ts**: Contains a debug version with console logs
+- **index.tsx**: Exports everything for external use
+
+This separation makes it easier to navigate the code and set breakpoints when debugging.
 
 ## Contributing & Development
 

@@ -124,9 +124,10 @@ Apito Typical Graphql Success Response:
 /**
  * Handles GraphQL errors from Apito responses
  * @param error The error object from urql client
+ * @param onTokenExpired Optional callback for handling 403 token expiration
  * @returns An HttpError object with appropriate status code and message
  */
-const handleGraphQLError = (error: CombinedError | undefined): HttpError => {
+const handleGraphQLError = (error: CombinedError | undefined, onTokenExpired?: () => void): HttpError => {
     if (!error) {
         return {
             message: 'Unknown error occurred',
@@ -136,14 +137,43 @@ const handleGraphQLError = (error: CombinedError | undefined): HttpError => {
 
     // Handle network errors
     if (error.networkError) {
+        // Check for 403 status in network error
+        const statusCode = (error.networkError as any).statusCode || (error.networkError as any).status;
+        if (statusCode === 403 || statusCode === 401) {
+            console.log("Token expired (403/401), triggering logout...");
+            onTokenExpired?.();
+            return {
+                message: 'Token expired. Please login again.',
+                statusCode: 403,
+            };
+        }
+
         return {
             message: `Network error: ${error.networkError.message}`,
-            statusCode: 503, // Service Unavailable
+            statusCode: statusCode || 503, // Service Unavailable
         };
     }
 
     // Handle GraphQL errors
     if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+        // Check for authentication/authorization errors in GraphQL errors
+        const hasAuthError = error.graphQLErrors.some(err =>
+            err.message.toLowerCase().includes('unauthorized') ||
+            err.message.toLowerCase().includes('forbidden') ||
+            err.message.toLowerCase().includes('token') ||
+            err.message.toLowerCase().includes('authentication') ||
+            err.message.toLowerCase().includes('authorization')
+        );
+
+        if (hasAuthError) {
+            console.log("Authentication error detected in GraphQL, triggering logout...");
+            onTokenExpired?.();
+            return {
+                message: 'Authentication failed. Please login again.',
+                statusCode: 403,
+            };
+        }
+
         const errorMessages = error.graphQLErrors.map(err => err.message).join(', ');
         return {
             message: errorMessages,
@@ -180,6 +210,7 @@ const generateConnectionFields = (connectionFields: Record<string, string>, alia
 const apitoDataProvider = (
     apiUrl: string,
     token: string,
+    onTokenExpired?: () => void,
 ): ExtendedDataProvider => {
     const client = new Client({
         url: apiUrl,
@@ -221,7 +252,7 @@ const apitoDataProvider = (
                         .toPromise();
 
                     if (response.error) {
-                        return Promise.reject(handleGraphQLError(response.error));
+                        return Promise.reject(handleGraphQLError(response.error, onTokenExpired));
                     }
 
                     const queryResponse = response?.data?.[queryKey];
@@ -448,7 +479,7 @@ const apitoDataProvider = (
                         .toPromise();
 
                     if (response.error) {
-                        return Promise.reject(handleGraphQLError(response.error));
+                        return Promise.reject(handleGraphQLError(response.error, onTokenExpired));
                     }
 
                     data = (response?.data?.[`${resource}List`] ?? []) as unknown as TData[];
@@ -505,7 +536,7 @@ const apitoDataProvider = (
                     .toPromise();
 
                 if (response.error) {
-                    return Promise.reject(handleGraphQLError(response.error));
+                    return Promise.reject(handleGraphQLError(response.error, onTokenExpired));
                 }
 
                 const data = (response?.data?.[singularResource] ?? {}) as TData;
@@ -588,7 +619,7 @@ const apitoDataProvider = (
                             .toPromise();
 
                         if (response.error) {
-                            return Promise.reject(handleGraphQLError(response.error));
+                            return Promise.reject(handleGraphQLError(response.error, onTokenExpired));
                         }
 
                         const data = (response?.data?.[`create${name}`] ?? {}) as TData;
@@ -661,7 +692,7 @@ const apitoDataProvider = (
                     .toPromise();
 
                 if (response.error) {
-                    return Promise.reject(handleGraphQLError(response.error));
+                    return Promise.reject(handleGraphQLError(response.error, onTokenExpired));
                 }
 
                 const data = (response?.data?.[`upsert${name}List`] ?? []) as unknown as TData[];
@@ -743,7 +774,7 @@ const apitoDataProvider = (
                         .toPromise();
 
                     if (response.error) {
-                        return Promise.reject(handleGraphQLError(response.error));
+                        return Promise.reject(handleGraphQLError(response.error, onTokenExpired));
                     }
 
                     return {
@@ -786,7 +817,7 @@ const apitoDataProvider = (
 
                 // Check for GraphQL errors in the response
                 if (response.error) {
-                    return Promise.reject(handleGraphQLError(response.error));
+                    return Promise.reject(handleGraphQLError(response.error, onTokenExpired));
                 }
 
                 // Check for errors in the data response (Apito specific error format)
@@ -891,7 +922,7 @@ const apitoDataProvider = (
                 //debugger;
 
                 if (response.error) {
-                    return Promise.reject(handleGraphQLError(response.error));
+                    return Promise.reject(handleGraphQLError(response.error, onTokenExpired));
                 }
 
                 // Check for errors in the data response (Apito specific error format)
