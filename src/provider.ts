@@ -473,8 +473,8 @@ const apitoDataProvider = (
                             },
                             {}
                         ),
-                        page: pagination?.current,
-                        limit: pagination?.pageSize,
+                        page: (pagination as any)?.current || (pagination as any)?.page || 1,
+                        limit: (pagination as any)?.pageSize || (pagination as any)?.size || 10,
                     };
 
                     const response = await client
