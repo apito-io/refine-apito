@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/refine-apito.svg)](https://badge.fury.io/js/refine-apito)
 [![npm](https://img.shields.io/npm/dt/refine-apito.svg)](https://www.npmjs.com/package/refine-apito)
 
-A data provider for [Refine](https://refine.dev/) that connects to [Apito](https://apito.io/) - An API builder with Serverless Functions
+A data provider for [Refine v5](https://refine.dev/) that connects to [Apito](https://apito.io/) - An API builder with Serverless Functions
 
 ## Features
 
@@ -298,7 +298,6 @@ In this example:
 - `waiter` is defined as an alias that points to the `employee` field
 - The `waiter` connection field specification from `connectionFields` is used for the alias
 - This allows you to get the same employee data under two different names in your response
-
 
 ### Error Handling
 

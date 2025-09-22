@@ -135,8 +135,11 @@ const handleGraphQLError = (error: CombinedError | undefined, onTokenExpired?: (
         };
     }
 
+    debugger;
+
     // Handle network errors
     if (error.networkError) {
+        debugger;
         // Check for 403 status in network error
         const statusCode = (error.networkError as any).statusCode || (error.networkError as any).status;
         if (statusCode === 403 || statusCode === 401) {
