@@ -537,7 +537,7 @@ const apitoDataProvider = (
           total =
             'total' in (response?.data?.[`${resource}ListCount`] || {})
               ? (response?.data?.[`${resource}ListCount`] as SingleResponseType)
-                  .total
+                .total
               : 0;
         }
 
@@ -640,7 +640,7 @@ const apitoDataProvider = (
             data:
               (
                 response?.data?.[
-                  `create${resource.charAt(0).toUpperCase() + resource.slice(1)}`
+                `create${resource.charAt(0).toUpperCase() + resource.slice(1)}`
                 ] as SingleResponseType
               )?.data ?? {},
           };
@@ -743,11 +743,11 @@ const apitoDataProvider = (
         // Clean up the array by filtering out empty objects, null, or undefined values
         const variableData = Array.isArray(variables)
           ? (variables as any[]).filter(
-              (item) =>
-                item !== null &&
-                item !== undefined &&
-                (typeof item !== 'object' || Object.keys(item).length > 0)
-            )
+            (item) =>
+              item !== null &&
+              item !== undefined &&
+              (typeof item !== 'object' || Object.keys(item).length > 0)
+          )
           : (variables as Record<string, any>);
 
         const response = await client
@@ -804,7 +804,7 @@ const apitoDataProvider = (
             data:
               (
                 response?.data?.[
-                  `update${resource.charAt(0).toUpperCase() + resource.slice(1)}`
+                `update${resource.charAt(0).toUpperCase() + resource.slice(1)}`
                 ] as SingleResponseType
               )?.data ?? {},
           };
@@ -857,7 +857,7 @@ const apitoDataProvider = (
             data:
               (
                 response?.data?.[
-                  `update${resource.charAt(0).toUpperCase() + resource.slice(1)}`
+                `update${resource.charAt(0).toUpperCase() + resource.slice(1)}`
                 ] as SingleResponseType
               )?.data ?? {},
           };
@@ -919,7 +919,7 @@ const apitoDataProvider = (
           data:
             (
               response?.data?.[
-                `delete${resource.charAt(0).toUpperCase() + resource.slice(1)}`
+              `delete${resource.charAt(0).toUpperCase() + resource.slice(1)}`
               ] as SingleResponseType
             )?.data ?? {},
         };
