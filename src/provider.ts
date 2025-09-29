@@ -11,7 +11,7 @@ import {
   GetOneResponse,
   HttpError,
 } from '@refinedev/core';
-import { Client, CombinedError, fetchExchange, gql } from '@urql/core';
+import { Client, CombinedError, cacheExchange, fetchExchange, gql } from '@urql/core';
 import pluralize from 'pluralize';
 import {
   ApitoGraphQLError,
@@ -229,8 +229,14 @@ const apitoDataProvider = (
 ): ExtendedDataProvider => {
   const client = new Client({
     url: apiUrl,
-    exchanges: [fetchExchange],
-    fetchOptions: () => ({ headers: { Authorization: `Bearer ${token}` } }),
+    exchanges: [cacheExchange, fetchExchange],
+    fetchOptions: () => ({
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    }),
   });
 
   return {
@@ -238,8 +244,14 @@ const apitoDataProvider = (
     getApiClient: () => {
       return new Client({
         url: apiUrl,
-        exchanges: [fetchExchange],
-        fetchOptions: () => ({ headers: { Authorization: `Bearer ${token}` } }),
+        exchanges: [cacheExchange, fetchExchange],
+        fetchOptions: () => ({
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }),
       });
     },
     getToken: () => token,
