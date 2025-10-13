@@ -225,7 +225,7 @@ const { data } = useList({
 const { data } = useList({
   resource: 'products',
   pagination: {
-    current: 1,
+    currentPage: 1,
     pageSize: 10,
   },
 });

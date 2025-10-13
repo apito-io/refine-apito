@@ -518,10 +518,8 @@ const apitoDataProvider = (
               }
               return acc;
             }, {}),
-            page:
-              (pagination as any)?.current || (pagination as any)?.page || 1,
-            limit:
-              (pagination as any)?.pageSize || (pagination as any)?.size || 10,
+            page: pagination?.currentPage || 1,
+            limit: pagination?.pageSize || 10,
           };
 
           const response = await client
