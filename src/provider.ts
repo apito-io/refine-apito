@@ -1006,10 +1006,12 @@ const apitoDataProvider = (
           response = await client
             .query<ResponseType>(query, variables)
             .toPromise();
-        } else {
+        } else if (mutation) {
           response = await client
             .mutation<ResponseType>(mutation, variables)
             .toPromise();
+        } else {
+          throw new Error('No query or mutation provided');
         }
 
         //debugger;
