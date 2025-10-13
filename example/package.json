@@ -33,12 +33,15 @@
     "typescript": "^5.9.3",
     "vite": "^6.0.7"
   },
-  "overrides": {
-    "@babel/runtime": ">=7.26.10",
-    "@babel/helpers": ">=7.26.10",
-    "http-proxy-middleware": ">=3.0.5",
-    "brace-expansion": ">=2.0.2",
-    "tmp": ">=0.2.4"
+  "pnpm": {
+    "overrides": {
+      "@babel/runtime": ">=7.26.10",
+      "@babel/helpers": ">=7.26.10",
+      "@babel/core": ">=7.26.10",
+      "http-proxy-middleware": ">=3.0.5",
+      "brace-expansion": ">=2.0.2",
+      "tmp": ">=0.2.4"
+    }
   },
   "scripts": {
     "dev": "refine dev",

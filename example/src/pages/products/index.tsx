@@ -1,20 +1,17 @@
 import React from 'react';
 import {
   List,
-  Table,
   useTable,
-  Space,
   EditButton,
   ShowButton,
   DeleteButton,
   getDefaultSortOrder,
   FilterDropdown,
-  Select,
   useSelect,
 } from '@refinedev/antd';
 import { useMany } from '@refinedev/core';
 import { SearchOutlined } from '@ant-design/icons';
-import { Input, Form } from 'antd';
+import { Input, Form, Table, Space, Select } from 'antd';
 
 export const ProductList: React.FC = () => {
   const { tableProps, sorters, filters } = useTable({
@@ -25,7 +22,7 @@ export const ProductList: React.FC = () => {
   });
 
   // Example of using useMany to get related data
-  const { data: categoryData, isLoading: categoryIsLoading } = useMany({
+  const categoryQuery = useMany({
     resource: 'categories',
     ids: tableProps?.dataSource?.map((item) => item?.category) ?? [],
     queryOptions: {
@@ -35,6 +32,8 @@ export const ProductList: React.FC = () => {
       fields: ['name'],
     },
   });
+  const categoryData = categoryQuery.result?.data;
+  const categoryIsLoading = categoryQuery.query?.isLoading;
 
   // Example of using useSelect for filtering
   const { selectProps: categorySelectProps } = useSelect({
@@ -57,7 +56,7 @@ export const ProductList: React.FC = () => {
           dataIndex={['data', 'name']}
           title="Name"
           sorter
-          filterDropdown={(props) => (
+          filterDropdown={(props: any) => (
             <FilterDropdown {...props}>
               <Input placeholder="Search Name" />
             </FilterDropdown>
@@ -73,7 +72,7 @@ export const ProductList: React.FC = () => {
         <Table.Column
           dataIndex={['data', 'category']}
           title="Category"
-          filterDropdown={(props) => (
+          filterDropdown={(props: any) => (
             <FilterDropdown {...props}>
               <Form.Item name="category">
                 <Select
@@ -84,13 +83,13 @@ export const ProductList: React.FC = () => {
               </Form.Item>
             </FilterDropdown>
           )}
-          render={(value) => {
+          render={(value: any) => {
             if (categoryIsLoading) {
               return 'Loading...';
             }
 
-            const category = categoryData?.data.find(
-              (item) => item.id === value
+            const category = categoryData?.find(
+              (item: any) => item.id === value
             );
             return category?.data?.name;
           }}
@@ -99,12 +98,12 @@ export const ProductList: React.FC = () => {
         <Table.Column
           dataIndex={['data', 'status']}
           title="Status"
-          render={(value) => (value ? 'Active' : 'Inactive')}
+          render={(value: any) => (value ? 'Active' : 'Inactive')}
         />
         <Table.Column
           title="Actions"
           dataIndex="actions"
-          render={(_, record) => (
+          render={(_: any, record: any) => (
             <Space>
               <EditButton hideText size="small" recordItemId={record.id} />
               <ShowButton hideText size="small" recordItemId={record.id} />
