@@ -90,6 +90,12 @@
     "@urql/core": "6.0.1",
     "pluralize": "8.0.0"
   },
+  "pnpm": {
+    "overrides": {
+      "glob": ">=10.5.0",
+      "js-yaml": ">=4.1.1"
+    }
+  },
   "keywords": [
     "refine",
     "refinedev",
