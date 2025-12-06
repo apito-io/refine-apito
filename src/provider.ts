@@ -276,7 +276,7 @@ const apitoDataProvider = (
           variables = meta.variables;
           const queryKey = meta.queryKey || resource;
           const response = await client
-            .query<ResponseType>(query, variables)
+            .query<ResponseType>(query as any, variables)
             .toPromise();
 
           if (response.error) {
@@ -523,7 +523,7 @@ const apitoDataProvider = (
           };
 
           const response = await client
-            .query<ResponseType>(query, variables)
+            .query<ResponseType>(query as any, variables)
             .toPromise();
 
           if (response.error) {
@@ -629,7 +629,7 @@ const apitoDataProvider = (
             _variables = meta.variables;
           }
           const response = await client
-            .mutation<ResponseType>(query, _variables)
+            .mutation<ResponseType>(query as any, _variables)
             .toPromise();
 
           if (response.error) {
@@ -793,7 +793,7 @@ const apitoDataProvider = (
             _variables = meta.variables;
           }
           const response = await client
-            .mutation<ResponseType>(query, _variables)
+            .mutation<ResponseType>(query as any, _variables)
             .toPromise();
 
           if (response.error) {
@@ -844,7 +844,7 @@ const apitoDataProvider = (
             disconnect: (variables as Record<string, any>).disconnect,
           };
           const response = await client
-            .mutation<ResponseType>(query, _variables)
+            .mutation<ResponseType>(query as any, _variables)
             .toPromise();
 
           if (response.error) {
@@ -1004,11 +1004,11 @@ const apitoDataProvider = (
         let response = null;
         if (query) {
           response = await client
-            .query<ResponseType>(query, variables)
+            .query<ResponseType>(query as any, variables)
             .toPromise();
         } else if (mutation) {
           response = await client
-            .mutation<ResponseType>(mutation, variables)
+            .mutation<ResponseType>(mutation as any, variables)
             .toPromise();
         } else {
           throw new Error('No query or mutation provided');

@@ -23,8 +23,8 @@ importers:
         version: 8.0.0
     devDependencies:
       '@refinedev/core':
-        specifier: 5.0.4
-        version: 5.0.4(@tanstack/react-query@5.90.3(react@19.2.0))(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        specifier: 5.0.6
+        version: 5.0.6(@tanstack/react-query@5.90.12(react@19.2.0))(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
@@ -605,8 +605,8 @@ packages:
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
-  '@refinedev/core@5.0.4':
-    resolution: {integrity: sha512-rDlumL0wEZzey7MDSxItLaCiO+Q7AVbdfmYEyzC+mzowOvVnbXOU+X6NzzMhJw8xibLsD7hGBZ7g2xwpSRN+bA==}
+  '@refinedev/core@5.0.6':
+    resolution: {integrity: sha512-nH1f5K0+QLVa9lDK9+c4Epv5y5yjxo8G4hH0XeWFoLVb0qJXN1VwPyyQg6WMZzZpdS+tabZN11IVLBP3qaEtzw==}
     engines: {node: '>=20'}
     peerDependencies:
       '@tanstack/react-query': ^5.81.5
@@ -615,8 +615,8 @@ packages:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
 
-  '@refinedev/devtools-internal@2.0.0':
-    resolution: {integrity: sha512-4AaEbqgeba0xgoeDKZOwMZj7eE2h5wjjPm3rDXKSe3Iu7y+qSkTmJy9QP58btG+umfkr3B6L1YGDjJnisUhXjw==}
+  '@refinedev/devtools-internal@2.0.1':
+    resolution: {integrity: sha512-B28TrwJoQ+afm2jC74r96jgaAQXhc4SHYnpenJSyMrv0nxL3Trnr+QnuRxSIjOaYm7y9pACpX8lqbzIouWPCfg==}
     engines: {node: '>=20'}
     peerDependencies:
       '@types/react': ^18.0.0 || ^19.0.0
@@ -624,8 +624,8 @@ packages:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
 
-  '@refinedev/devtools-shared@2.0.0':
-    resolution: {integrity: sha512-wZCANG8ZBKcEHb9dCmNE40cqpw8LT/ujv1/xyV9XgNEIJJIKDe0HunqCiBimbyowzAtdrWqM3X3X5UwgQze9ug==}
+  '@refinedev/devtools-shared@2.0.1':
+    resolution: {integrity: sha512-x9Eg7wdwx8AB9LgN9Gg/bW4icpdIYCoJLCXZA2kOoY77+CHmUY6Uv78RgimvkIGEHZucbchJLCFoLdZkvx5ceQ==}
     engines: {node: '>=20'}
     peerDependencies:
       '@types/react': ^18.0.0 || ^19.0.0
@@ -742,11 +742,11 @@ packages:
   '@sinonjs/fake-timers@13.0.5':
     resolution: {integrity: sha512-36/hTbH2uaWuGVERyC6da9YwGWnzUZXuPro/F2LfsdOsLnCojz/iSH8MxUt/FD2S5XBSVPhmArFUXcpCQ2Hkiw==}
 
-  '@tanstack/query-core@5.90.3':
-    resolution: {integrity: sha512-HtPOnCwmx4dd35PfXU8jjkhwYrsHfuqgC8RCJIwWglmhIUIlzPP0ZcEkDAc+UtAWCiLm7T8rxeEfHZlz3hYMCA==}
+  '@tanstack/query-core@5.90.12':
+    resolution: {integrity: sha512-T1/8t5DhV/SisWjDnaiU2drl6ySvsHj1bHBCWNXd+/T+Hh1cf6JodyEYMd5sgwm+b/mETT4EV3H+zCVczCU5hg==}
 
-  '@tanstack/react-query@5.90.3':
-    resolution: {integrity: sha512-i/LRL6DtuhG6bjGzavIMIVuKKPWx2AnEBIsBfuMm3YoHne0a20nWmsatOCBcVSaT0/8/5YFjNkebHAPLVUSi0Q==}
+  '@tanstack/react-query@5.90.12':
+    resolution: {integrity: sha512-graRZspg7EoEaw0a8faiUASCyJrqjKPdqJ9EwuDRUF9mEYJ1YPczI9H+/agJ0mOJkPCJDk0lsz5QTrLZ/jQ2rg==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -2884,10 +2884,10 @@ snapshots:
 
   '@pkgr/core@0.2.9': {}
 
-  '@refinedev/core@5.0.4(@tanstack/react-query@5.90.3(react@19.2.0))(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@refinedev/core@5.0.6(@tanstack/react-query@5.90.12(react@19.2.0))(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
-      '@refinedev/devtools-internal': 2.0.0(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      '@tanstack/react-query': 5.90.3(react@19.2.0)
+      '@refinedev/devtools-internal': 2.0.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@tanstack/react-query': 5.90.12(react@19.2.0)
       '@types/react': 19.2.2
       '@types/react-dom': 19.2.2(@types/react@19.2.2)
       lodash: 4.17.21
@@ -2900,19 +2900,19 @@ snapshots:
       tslib: 2.8.1
       warn-once: 0.1.1
 
-  '@refinedev/devtools-internal@2.0.0(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@refinedev/devtools-internal@2.0.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
-      '@refinedev/devtools-shared': 2.0.0(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      '@tanstack/react-query': 5.90.3(react@19.2.0)
+      '@refinedev/devtools-shared': 2.0.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@tanstack/react-query': 5.90.12(react@19.2.0)
       '@types/react': 19.2.2
       '@types/react-dom': 19.2.2(@types/react@19.2.2)
       error-stack-parser: 2.1.4
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
-  '@refinedev/devtools-shared@2.0.0(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@refinedev/devtools-shared@2.0.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
-      '@tanstack/react-query': 5.90.3(react@19.2.0)
+      '@tanstack/react-query': 5.90.12(react@19.2.0)
       '@types/react': 19.2.2
       '@types/react-dom': 19.2.2(@types/react@19.2.2)
       error-stack-parser: 2.1.4
@@ -2989,11 +2989,11 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
-  '@tanstack/query-core@5.90.3': {}
+  '@tanstack/query-core@5.90.12': {}
 
-  '@tanstack/react-query@5.90.3(react@19.2.0)':
+  '@tanstack/react-query@5.90.12(react@19.2.0)':
     dependencies:
-      '@tanstack/query-core': 5.90.3
+      '@tanstack/query-core': 5.90.12
       react: 19.2.0
 
   '@tybys/wasm-util@0.10.1':

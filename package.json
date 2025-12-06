@@ -1,5 +1,5 @@
 {
-  "version": "0.2.8",
+  "version": "0.3.2",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -38,7 +38,7 @@
     }
   },
   "peerDependencies": {
-    "@refinedev/core": "^5.0.4",
+    "@refinedev/core": "^5.0.6",
     "react": ">=18"
   },
   "husky": {
@@ -65,7 +65,7 @@
     }
   ],
   "devDependencies": {
-    "@refinedev/core": "5.0.4",
+    "@refinedev/core": "5.0.6",
     "@types/jest": "^30.0.0",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
