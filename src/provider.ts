@@ -21,6 +21,13 @@ import {
   SingleResponseType,
 } from './types';
 
+/** Property names that must not come from user-controlled filter input (prototype pollution). */
+const UNSAFE_DYNAMIC_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+function isSafeDynamicKey(key: unknown): key is string {
+  return typeof key === 'string' && key.length > 0 && !UNSAFE_DYNAMIC_KEYS.has(key);
+}
+
 /*
 Apito Typical Graphql Error Response:
 {
@@ -309,27 +316,42 @@ const apitoDataProvider = (
 
             // Handle special case where operator is "eq" and value is an array
             if (operator === 'eq' && Array.isArray(value)) {
-              // Create a nested object structure for this case
-              const nestedCondition: Record<string, any> = {};
+              // Create a nested object structure for this case (null prototype + safe keys)
+              const nestedCondition = Object.create(null) as Record<
+                string,
+                Record<string, unknown>
+              >;
               value.forEach((condition) => {
                 const {
                   field: subField,
                   operator: subOperator,
                   value: subValue,
                 } = condition;
-                if (subField && subOperator && subValue !== undefined) {
+                if (
+                  subField &&
+                  subOperator &&
+                  subValue !== undefined &&
+                  isSafeDynamicKey(subField) &&
+                  isSafeDynamicKey(subOperator)
+                ) {
                   if (!nestedCondition[subField]) {
-                    nestedCondition[subField] = {};
+                    nestedCondition[subField] = Object.create(null) as Record<
+                      string,
+                      unknown
+                    >;
                   }
                   nestedCondition[subField][subOperator] = subValue;
                 }
               });
+              if (!isSafeDynamicKey(field)) {
+                return {};
+              }
               return { [field]: nestedCondition };
             }
 
             // Handle OR operation
             if (operator === 'or' && Array.isArray(value)) {
-              const orConditions: Record<string, any> = {};
+              const orConditions = Object.create(null) as Record<string, unknown>;
               value.forEach((condition) => {
                 const { field, operator, value } = condition;
                 if (field && operator && value !== undefined) {
@@ -337,7 +359,9 @@ const apitoDataProvider = (
                   const adjustedField = field.startsWith('data.')
                     ? field.replace('data.', '')
                     : field;
-                  orConditions[adjustedField] = { [operator]: value };
+                  if (isSafeDynamicKey(adjustedField) && isSafeDynamicKey(operator)) {
+                    orConditions[adjustedField] = { [operator]: value };
+                  }
                 }
               });
               return { OR: orConditions };
@@ -345,7 +369,7 @@ const apitoDataProvider = (
 
             // Handle AND operation
             if (operator === 'and' && Array.isArray(value)) {
-              const andConditions: Record<string, any> = {};
+              const andConditions = Object.create(null) as Record<string, unknown>;
               value.forEach((condition) => {
                 const { field, operator, value } = condition;
                 if (field && operator && value !== undefined) {
@@ -353,7 +377,9 @@ const apitoDataProvider = (
                   const adjustedField = field.startsWith('data.')
                     ? field.replace('data.', '')
                     : field;
-                  andConditions[adjustedField] = { [operator]: value };
+                  if (isSafeDynamicKey(adjustedField) && isSafeDynamicKey(operator)) {
+                    andConditions[adjustedField] = { [operator]: value };
+                  }
                 }
               });
               return { AND: andConditions };
@@ -361,37 +387,51 @@ const apitoDataProvider = (
 
             // Handle regular field filters
             if (field === '_key') {
-              return { _key: { [operator || 'eq']: value } };
+              const keyOp = operator || 'eq';
+              if (!isSafeDynamicKey(keyOp)) {
+                return {};
+              }
+              return { _key: { [keyOp]: value } };
             }
 
             if (field && field.includes('relation.')) {
               const relationPath = field.replace('relation.', '').split('.');
-              const relationCondition: Record<string, any> = {};
+              if (!relationPath.length || !relationPath.every(isSafeDynamicKey)) {
+                return {};
+              }
+              const relationCondition = Object.create(null) as Record<string, any>;
 
               // Build nested object structure
               let current: Record<string, any> = relationCondition;
               for (let i = 0; i < relationPath.length - 1; i++) {
                 const part = relationPath[i];
                 if (!current[part]) {
-                  current[part] = {};
+                  current[part] = Object.create(null) as Record<string, any>;
                 }
                 current = current[part];
               }
 
               const lastPart = relationPath[relationPath.length - 1];
-              if (operator && value !== undefined) {
+              if (
+                operator &&
+                value !== undefined &&
+                isSafeDynamicKey(lastPart) &&
+                isSafeDynamicKey(operator)
+              ) {
                 current[lastPart] = { [operator]: value };
               }
 
               return { relation: relationCondition };
             }
 
-            if (operator && value !== undefined) {
+            if (operator && value !== undefined && typeof field === 'string') {
               // Adjust `data.name` to `name`
               const adjustedField = field.startsWith('data.')
                 ? field.replace('data.', '')
                 : field;
-              return { [adjustedField]: { [operator]: value } };
+              if (isSafeDynamicKey(adjustedField) && isSafeDynamicKey(operator)) {
+                return { [adjustedField]: { [operator]: value } };
+              }
             }
 
             return {};
