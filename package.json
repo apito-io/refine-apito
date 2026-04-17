@@ -1,5 +1,5 @@
 {
-  "version": "0.3.2",
+  "version": "0.3.3",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -29,13 +29,6 @@
     "docs:dev": "docz dev",
     "docs:build": "docz build",
     "deploy:docs": "gh-pages -d .docz/dist"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "transform": {
-      "^.+\\.(ts|tsx)$": "ts-jest"
-    }
   },
   "peerDependencies": {
     "@refinedev/core": "^5.0.6",
@@ -93,7 +86,18 @@
   "pnpm": {
     "overrides": {
       "glob": ">=10.5.0",
-      "js-yaml": ">=4.1.1"
+      "js-yaml": ">=4.1.1",
+      "lodash": ">=4.17.23",
+      "lodash-es": ">=4.17.23",
+      "qs": ">=6.14.2",
+      "@isaacs/brace-expansion": ">=5.0.1",
+      "rollup": ">=4.60.1",
+      "handlebars": ">=4.7.9",
+      "ajv": ">=6.14.0",
+      "flatted": ">=3.4.2",
+      "minimatch": ">=10.2.5",
+      "brace-expansion": ">=2.1.0",
+      "picomatch": ">=4.0.4"
     }
   },
   "keywords": [
