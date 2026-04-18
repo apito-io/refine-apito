@@ -1,9 +1,11 @@
 import {
+  apitoConnectionFilterConditionType,
   apitoGraphQLTypeName,
   apitoListGraphQLName,
   apitoLowerCamelModelId,
   apitoModelBaseName,
   apitoSingularGraphQLName,
+  apitoWhereRelationFilterConditionType,
 } from './apitoGraphqlNames';
 
 describe('apitoGraphqlNames', () => {
@@ -30,5 +32,17 @@ describe('apitoGraphqlNames', () => {
   test('apitoLowerCamelModelId', () => {
     expect(apitoLowerCamelModelId('foodcategory')).toBe('foodcategory');
     expect(apitoLowerCamelModelId('food_category')).toBe('foodCategory');
+  });
+
+  test('connection type uses singular model id like Apito BuildConnectionArguments', () => {
+    expect(apitoConnectionFilterConditionType('foods')).toBe(
+      'FOOD_CONNECTION_FILTER_CONDITION'
+    );
+  });
+
+  test('relation where type uses singular model id like Apito BuildWhereRelationConditionArgument', () => {
+    expect(apitoWhereRelationFilterConditionType('foods')).toBe(
+      'FOOD_WHERE_RELATION_FILTER_CONDITION'
+    );
   });
 });

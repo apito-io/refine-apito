@@ -58,3 +58,24 @@ export function apitoSingularGraphQLName(resource: string): string {
 export function apitoListGraphQLName(resource: string): string {
   return apitoGraphQLTypeName(apitoModelBaseName(resource) + 'List');
 }
+
+/**
+ * SCREAMING_SNAKE input name for the `connection` argument on list/count queries.
+ * Matches Apito `objects.BuildConnectionArguments(definedModel.Name)` →
+ * `strings.ToUpper(name + "_Connection_Filter_Condition")` (singular model id, not the list GraphQL name).
+ */
+export function apitoConnectionFilterConditionType(resource: string): string {
+  return (
+    apitoModelBaseName(resource) + '_Connection_Filter_Condition'
+  ).toUpperCase();
+}
+
+/**
+ * SCREAMING_SNAKE input name for the `relation` / `relationWhere` argument.
+ * Matches Apito `BuildWhereRelationConditionArgument(definedModel.Name, ...)`.
+ */
+export function apitoWhereRelationFilterConditionType(resource: string): string {
+  return (
+    apitoModelBaseName(resource) + '_Where_Relation_Filter_Condition'
+  ).toUpperCase();
+}

@@ -13,12 +13,14 @@ import {
 } from '@refinedev/core';
 import { Client, CombinedError, cacheExchange, fetchExchange, gql } from '@urql/core';
 import {
+  apitoConnectionFilterConditionType,
   apitoGraphQLTypeName,
   apitoListGraphQLName,
   apitoListRootField,
   apitoLowerCamelModelId,
   apitoModelBaseName,
   apitoSingularGraphQLName,
+  apitoWhereRelationFilterConditionType,
 } from './apitoGraphqlNames';
 import {
   ApitoGraphQLError,
@@ -485,17 +487,17 @@ const apitoDataProvider = (
             hasKey
               ? `$_key: ${listPascal.toUpperCase()}_KEY_CONDITION`
               : null,
-            `$connection: ${listPascal.toUpperCase()}_CONNECTION_FILTER_CONDITION`,
+            `$connection: ${apitoConnectionFilterConditionType(resource)}`,
             `$where: ${listPascal.toUpperCase()}_INPUT_WHERE_PAYLOAD`,
             hasRelationWhere
-              ? `$relationWhere: ${listPascal.toUpperCase()}_WHERE_RELATION_FILTER_CONDITION`
+              ? `$relationWhere: ${apitoWhereRelationFilterConditionType(resource)}`
               : null,
             hasKey
               ? `$_keyCount: ${listCountGraphql.toUpperCase()}_KEY_CONDITION`
               : null,
             `$whereCount: ${listCountGraphql.toUpperCase()}_INPUT_WHERE_PAYLOAD`,
             hasRelationWhere
-              ? `$relationWhereCount: ${listCountGraphql.toUpperCase()}_WHERE_RELATION_FILTER_CONDITION`
+              ? `$relationWhereCount: ${apitoWhereRelationFilterConditionType(resource)}`
               : null,
             `$sort: ${listPascal.toUpperCase()}_INPUT_SORT_PAYLOAD`,
             `$page: Int`,
