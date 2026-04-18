@@ -12,7 +12,14 @@ import {
   HttpError,
 } from '@refinedev/core';
 import { Client, CombinedError, cacheExchange, fetchExchange, gql } from '@urql/core';
-import pluralize from 'pluralize';
+import {
+  apitoGraphQLTypeName,
+  apitoListGraphQLName,
+  apitoListRootField,
+  apitoLowerCamelModelId,
+  apitoModelBaseName,
+  apitoSingularGraphQLName,
+} from './apitoGraphqlNames';
 import {
   ApitoGraphQLError,
   CustomResponse,
@@ -306,9 +313,10 @@ const apitoDataProvider = (
           };
         } else {
           const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
-          const pluralResource =
-            pluralize.plural(resource).charAt(0).toUpperCase() +
-            pluralize.plural(resource).slice(1);
+          const modelBase = apitoModelBaseName(resource);
+          const listPascal = apitoListGraphQLName(resource);
+          const listCountGraphql = apitoGraphQLTypeName(`${modelBase}List_Count`);
+          const pluralResource = listPascal;
 
           // Helper function to process filters recursively
           const processFilter = (filter: any): any => {
@@ -475,21 +483,21 @@ const apitoDataProvider = (
 
           const queryVariables = [
             hasKey
-              ? `$_key: ${resource.toUpperCase()}LIST_KEY_CONDITION`
+              ? `$_key: ${listPascal.toUpperCase()}_KEY_CONDITION`
               : null,
-            `$connection: ${resource.toUpperCase()}_CONNECTION_FILTER_CONDITION`,
-            `$where: ${resource.toUpperCase()}LIST_INPUT_WHERE_PAYLOAD`,
+            `$connection: ${listPascal.toUpperCase()}_CONNECTION_FILTER_CONDITION`,
+            `$where: ${listPascal.toUpperCase()}_INPUT_WHERE_PAYLOAD`,
             hasRelationWhere
-              ? `$relationWhere: ${resource.toUpperCase()}_WHERE_RELATION_FILTER_CONDITION`
+              ? `$relationWhere: ${listPascal.toUpperCase()}_WHERE_RELATION_FILTER_CONDITION`
               : null,
             hasKey
-              ? `$_keyCount: ${resource.toUpperCase()}LIST_COUNT_KEY_CONDITION`
+              ? `$_keyCount: ${listCountGraphql.toUpperCase()}_KEY_CONDITION`
               : null,
-            `$whereCount: ${resource.toUpperCase()}LIST_COUNT_INPUT_WHERE_PAYLOAD`,
+            `$whereCount: ${listCountGraphql.toUpperCase()}_INPUT_WHERE_PAYLOAD`,
             hasRelationWhere
-              ? `$relationWhereCount: ${resource.toUpperCase()}_WHERE_RELATION_FILTER_CONDITION`
+              ? `$relationWhereCount: ${listCountGraphql.toUpperCase()}_WHERE_RELATION_FILTER_CONDITION`
               : null,
-            `$sort: ${resource.toUpperCase()}LIST_INPUT_SORT_PAYLOAD`,
+            `$sort: ${listPascal.toUpperCase()}_INPUT_SORT_PAYLOAD`,
             `$page: Int`,
             `$limit: Int`,
             `$local: LOCAL_TYPE_ENUM`,
@@ -525,7 +533,7 @@ const apitoDataProvider = (
                         query Get${pluralResource}(
                             ${queryVariables}
                         ) {
-                            ${resource}List(${queryArguments}) {
+                            ${apitoListRootField(resource)}(${queryArguments}) {
                                 id
                                 data {
                                     ${fields.join('\n')}
@@ -537,7 +545,7 @@ const apitoDataProvider = (
                                     updated_at
                                 }
                             }
-                            ${resource}ListCount(${countArguments}) {
+                            ${apitoListRootField(resource)}Count(${countArguments}) {
                                 total
                             }
                         }
@@ -572,11 +580,11 @@ const apitoDataProvider = (
             );
           }
 
-          data = (response?.data?.[`${resource}List`] ??
-            []) as unknown as TData[];
+          const listRoot = apitoListRootField(resource);
+          data = (response?.data?.[listRoot] ?? []) as unknown as TData[];
           total =
-            'total' in (response?.data?.[`${resource}ListCount`] || {})
-              ? (response?.data?.[`${resource}ListCount`] as SingleResponseType)
+            'total' in (response?.data?.[`${listRoot}Count`] || {})
+              ? (response?.data?.[`${listRoot}Count`] as SingleResponseType)
                 .total
               : 0;
         }
@@ -606,10 +614,13 @@ const apitoDataProvider = (
         const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
         const connectionFields = meta?.connectionFields || {};
         const aliasFields = meta?.aliasFields || {};
-        const singularResource = pluralize.singular(resource);
+        const singularField = apitoLowerCamelModelId(
+          apitoModelBaseName(resource)
+        );
+        const singularPascal = apitoSingularGraphQLName(resource);
         const query = gql`
-                  query Get${singularResource.charAt(0).toUpperCase() + singularResource.slice(1)}($id: String!) {
-                      ${singularResource}(_id: $id) {
+                  query Get${singularPascal}($id: String!) {
+                      ${singularField}(_id: $id) {
                           id
                           data {
                               ${fields.join('\n')}
@@ -634,7 +645,7 @@ const apitoDataProvider = (
           );
         }
 
-        const data = (response?.data?.[singularResource] ?? {}) as TData;
+        const data = (response?.data?.[singularField] ?? {}) as TData;
 
         return {
           data: data,
@@ -680,18 +691,15 @@ const apitoDataProvider = (
             data:
               (
                 response?.data?.[
-                `create${resource.charAt(0).toUpperCase() + resource.slice(1)}`
+                `create${apitoSingularGraphQLName(resource)}`
                 ] as SingleResponseType
               )?.data ?? {},
           };
         } else {
           try {
             const { resource, variables, meta } = params;
-            const singularResource = pluralize.singular(resource);
             const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
-            const name =
-              singularResource.charAt(0).toUpperCase() +
-              singularResource.slice(1);
+            const name = apitoSingularGraphQLName(resource);
 
             const query = gql`
                   mutation Create${name}($payload: ${name}_Create_Payload!, $connect: ${name}_Relation_Connect_Payload) {
@@ -759,14 +767,17 @@ const apitoDataProvider = (
     ): Promise<CreateManyResponse<TData>> {
       try {
         const { resource, variables, meta } = params;
-        const singularResource = pluralize.singular(resource);
         const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
-        const name =
-          singularResource.charAt(0).toUpperCase() + singularResource.slice(1);
+        const modelBase = apitoModelBaseName(resource);
+        const listPascal = apitoListGraphQLName(resource);
+        const upsertPayloadType = apitoGraphQLTypeName(
+          `${modelBase}List_Upsert_Payload`
+        );
+        const singularPascal = apitoSingularGraphQLName(resource);
 
         const mutation = gql`
-                  mutation Upsert${name}List($payloads: [${name}List_Upsert_Payload!]!, $connect: ${name}_Relation_Connect_Payload) {
-                      upsert${name}List(payloads: $payloads, connect: $connect, status: published) {
+                  mutation Upsert${listPascal}($payloads: [${upsertPayloadType}!]!, $connect: ${singularPascal}_Relation_Connect_Payload) {
+                      upsert${listPascal}(payloads: $payloads, connect: $connect, status: published) {
                           id
                           data {
                               ${fields.join('\n')}
@@ -803,7 +814,7 @@ const apitoDataProvider = (
           );
         }
 
-        const data = (response?.data?.[`upsert${name}List`] ??
+        const data = (response?.data?.[`upsert${listPascal}`] ??
           []) as unknown as TData[];
         return { data: data };
       } catch (error) {
@@ -844,17 +855,14 @@ const apitoDataProvider = (
             data:
               (
                 response?.data?.[
-                `update${resource.charAt(0).toUpperCase() + resource.slice(1)}`
+                `update${apitoSingularGraphQLName(resource)}`
                 ] as SingleResponseType
               )?.data ?? {},
           };
         } else {
           const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
           const deltaUpdate = meta?.deltaUpdate || false;
-          const singularResource = pluralize.singular(resource);
-          const name =
-            singularResource.charAt(0).toUpperCase() +
-            singularResource.slice(1);
+          const name = apitoSingularGraphQLName(resource);
           query = gql`
                       mutation Update${name}(
                           $id: String!,
@@ -896,9 +904,7 @@ const apitoDataProvider = (
           return {
             data:
               (
-                response?.data?.[
-                `update${resource.charAt(0).toUpperCase() + resource.slice(1)}`
-                ] as SingleResponseType
+                response?.data?.[`update${name}`] as SingleResponseType
               )?.data ?? {},
           };
         }
@@ -919,9 +925,7 @@ const apitoDataProvider = (
 
     async deleteOne({ resource, id }) {
       try {
-        const singularResource = pluralize.singular(resource);
-        const name =
-          singularResource.charAt(0).toUpperCase() + singularResource.slice(1);
+        const name = apitoSingularGraphQLName(resource);
 
         const query = gql`
                   mutation Delete${name}($ids: [String]!) {
@@ -958,9 +962,7 @@ const apitoDataProvider = (
         return {
           data:
             (
-              response?.data?.[
-              `delete${resource.charAt(0).toUpperCase() + resource.slice(1)}`
-              ] as SingleResponseType
+              response?.data?.[`delete${name}`] as SingleResponseType
             )?.data ?? {},
         };
       } catch (error) {
