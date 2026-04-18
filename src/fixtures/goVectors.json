@@ -1,0 +1,114 @@
+[
+  {
+    "input": "foods",
+    "singularResourceName": "food",
+    "multipleResourceName": "foodList",
+    "graphqlTypeName": "Food",
+    "graphqlTypeNamePlural": "Foodlist"
+  },
+  {
+    "input": "foodCategories",
+    "singularResourceName": "foodCategory",
+    "multipleResourceName": "foodCategoryList",
+    "graphqlTypeName": "Foodcategory",
+    "graphqlTypeNamePlural": "Foodcategorylist"
+  },
+  {
+    "input": "bankAccounts",
+    "singularResourceName": "bankAccount",
+    "multipleResourceName": "bankAccountList",
+    "graphqlTypeName": "Bankaccount",
+    "graphqlTypeNamePlural": "Bankaccountlist"
+  },
+  {
+    "input": "food_orders",
+    "singularResourceName": "foodOrder",
+    "multipleResourceName": "foodOrderList",
+    "graphqlTypeName": "Foodorder",
+    "graphqlTypeNamePlural": "Foodorderlist"
+  },
+  {
+    "input": "bank_account",
+    "singularResourceName": "bankAccount",
+    "multipleResourceName": "bankAccountList",
+    "graphqlTypeName": "Bankaccount",
+    "graphqlTypeNamePlural": "Bankaccountlist"
+  },
+  {
+    "input": "products",
+    "singularResourceName": "product",
+    "multipleResourceName": "productList",
+    "graphqlTypeName": "Product",
+    "graphqlTypeNamePlural": "Productlist"
+  },
+  {
+    "input": "addons",
+    "singularResourceName": "addon",
+    "multipleResourceName": "addonList",
+    "graphqlTypeName": "Addon",
+    "graphqlTypeNamePlural": "Addonlist"
+  },
+  {
+    "input": "ledgers",
+    "singularResourceName": "ledger",
+    "multipleResourceName": "ledgerList",
+    "graphqlTypeName": "Ledger",
+    "graphqlTypeNamePlural": "Ledgerlist"
+  },
+  {
+    "input": "children",
+    "singularResourceName": "child",
+    "multipleResourceName": "childList",
+    "graphqlTypeName": "Child",
+    "graphqlTypeNamePlural": "Childlist"
+  },
+  {
+    "input": "people",
+    "singularResourceName": "person",
+    "multipleResourceName": "personList",
+    "graphqlTypeName": "Person",
+    "graphqlTypeNamePlural": "Personlist"
+  },
+  {
+    "input": "status",
+    "singularResourceName": "status",
+    "multipleResourceName": "statusList",
+    "graphqlTypeName": "Status",
+    "graphqlTypeNamePlural": "Statuslist"
+  },
+  {
+    "input": "data",
+    "singularResourceName": "datum",
+    "multipleResourceName": "datumList",
+    "graphqlTypeName": "Datum",
+    "graphqlTypeNamePlural": "Datumlist"
+  },
+  {
+    "input": "foodOrders",
+    "singularResourceName": "foodOrder",
+    "multipleResourceName": "foodOrderList",
+    "graphqlTypeName": "Foodorder",
+    "graphqlTypeNamePlural": "Foodorderlist"
+  },
+  {
+    "input": "foodCategoryList",
+    "singularResourceName": "foodCategory",
+    "multipleResourceName": "foodCategoryList",
+    "graphqlTypeName": "Foodcategory",
+    "graphqlTypeNamePlural": "Foodcategorylist"
+  },
+  {
+    "input": "bankAccountListCount",
+    "singularResourceName": "bankAccount",
+    "multipleResourceName": "bankAccountList",
+    "graphqlTypeName": "Bankaccount",
+    "graphqlTypeNamePlural": "Bankaccountlist"
+  },
+  {
+    "input": "tag_Update_Payload",
+    "singularResourceName": "tagUpdatePayload",
+    "multipleResourceName": "tagUpdatePayloadList",
+    "graphqlTypeName": "Tagupdatepayload",
+    "graphqlTypeNamePlural": "Tagupdatepayloadlist"
+  }
+]

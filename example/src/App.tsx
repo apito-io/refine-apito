@@ -1,43 +1,24 @@
-import {
-  Refine,
-  GitHubBanner,
-  WelcomePage,
-  Authenticated,
-} from '@refinedev/core';
+import { Refine, GitHubBanner, WelcomePage } from '@refinedev/core';
 import { DevtoolsPanel, DevtoolsProvider } from '@refinedev/devtools';
 // import { RefineKbar, RefineKbarProvider } from '@refinedev/kbar'; // Not compatible with Refine v5
 
-import {
-  AuthPage,
-  ErrorComponent,
-  useNotificationProvider,
-  ThemedLayout,
-  ThemedSider,
-} from '@refinedev/antd';
+import { useNotificationProvider } from '@refinedev/antd';
 import '@refinedev/antd/dist/reset.css';
 
 import { apitoDataProvider } from '../../src';
 import { App as AntdApp } from 'antd';
-import { BrowserRouter, Route, Routes, Outlet } from 'react-router';
+import { BrowserRouter, Route, Routes } from 'react-router';
 import routerBindings, {
-  NavigateToResource,
-  CatchAllNavigate,
   UnsavedChangesNotifier,
   DocumentTitleHandler,
 } from '@refinedev/react-router';
 import { ColorModeContextProvider } from './contexts/color-mode';
-import { Header } from './components/header';
-import { Login } from './pages/login';
-import { Register } from './pages/register';
-import { ForgotPassword } from './pages/forgotPassword';
 import { authProvider } from './authProvider';
 import ProductList from './pages/products';
 import ProductCreate from './pages/products/create';
 
 const APITO_API_URL = 'https://api.apito.io/secured/graphql';
 const APITO_API_TOKEN = 'YOUR_API_TOKEN';
-const USE_TENANT = false;
-const TOKEN_KEY = 'apito_token';
 
 const apitoDataProviderInstance = apitoDataProvider(
   APITO_API_URL,

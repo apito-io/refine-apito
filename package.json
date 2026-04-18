@@ -1,5 +1,5 @@
 {
-  "version": "0.4.1",
+  "version": "0.5.1",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -9,6 +9,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./graphql-names": {
+      "types": "./dist/apitoGraphqlNames.d.ts",
+      "import": "./dist/apitoGraphqlNames.mjs",
+      "require": "./dist/apitoGraphqlNames.js"
     }
   },
   "files": [
@@ -80,9 +85,8 @@
   },
   "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0",
   "dependencies": {
-    "@types/pluralize": "0.0.33",
     "@urql/core": "6.0.1",
-    "pluralize": "8.0.0"
+    "inflection": "^3.0.0"
   },
   "pnpm": {
     "overrides": {

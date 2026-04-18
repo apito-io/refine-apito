@@ -15,12 +15,17 @@ import { Client, CombinedError, cacheExchange, fetchExchange, gql } from '@urql/
 import {
   apitoConnectionFilterConditionType,
   apitoGraphQLTypeName,
-  apitoListGraphQLName,
-  apitoListRootField,
-  apitoLowerCamelModelId,
-  apitoModelBaseName,
-  apitoSingularGraphQLName,
+  apitoListCountKeyConditionType,
+  apitoListCountWhereInputType,
+  apitoListGraphQLTypeName,
+  apitoListKeyConditionType,
+  apitoMultipleResourceName,
+  apitoSingularGraphQLTypeName,
+  apitoModelName,
+  apitoSortInputType,
+  apitoWhereInputType,
   apitoWhereRelationFilterConditionType,
+  buildApitoCreateMutation,
 } from './apitoGraphqlNames';
 import {
   ApitoGraphQLError,
@@ -315,9 +320,7 @@ const apitoDataProvider = (
           };
         } else {
           const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
-          const modelBase = apitoModelBaseName(resource);
-          const listPascal = apitoListGraphQLName(resource);
-          const listCountGraphql = apitoGraphQLTypeName(`${modelBase}List_Count`);
+          const listPascal = apitoListGraphQLTypeName(resource);
           const pluralResource = listPascal;
 
           // Helper function to process filters recursively
@@ -484,22 +487,18 @@ const apitoDataProvider = (
           const hasRelationWhere = relationWhere !== null;
 
           const queryVariables = [
-            hasKey
-              ? `$_key: ${listPascal.toUpperCase()}_KEY_CONDITION`
-              : null,
+            hasKey ? `$_key: ${apitoListKeyConditionType(resource)}` : null,
             `$connection: ${apitoConnectionFilterConditionType(resource)}`,
-            `$where: ${listPascal.toUpperCase()}_INPUT_WHERE_PAYLOAD`,
+            `$where: ${apitoWhereInputType(resource)}`,
             hasRelationWhere
               ? `$relationWhere: ${apitoWhereRelationFilterConditionType(resource)}`
               : null,
-            hasKey
-              ? `$_keyCount: ${listCountGraphql.toUpperCase()}_KEY_CONDITION`
-              : null,
-            `$whereCount: ${listCountGraphql.toUpperCase()}_INPUT_WHERE_PAYLOAD`,
+            hasKey ? `$_keyCount: ${apitoListCountKeyConditionType(resource)}` : null,
+            `$whereCount: ${apitoListCountWhereInputType(resource)}`,
             hasRelationWhere
               ? `$relationWhereCount: ${apitoWhereRelationFilterConditionType(resource)}`
               : null,
-            `$sort: ${listPascal.toUpperCase()}_INPUT_SORT_PAYLOAD`,
+            `$sort: ${apitoSortInputType(resource)}`,
             `$page: Int`,
             `$limit: Int`,
             `$local: LOCAL_TYPE_ENUM`,
@@ -535,7 +534,7 @@ const apitoDataProvider = (
                         query Get${pluralResource}(
                             ${queryVariables}
                         ) {
-                            ${apitoListRootField(resource)}(${queryArguments}) {
+                            ${apitoMultipleResourceName(resource)}(${queryArguments}) {
                                 id
                                 data {
                                     ${fields.join('\n')}
@@ -547,7 +546,7 @@ const apitoDataProvider = (
                                     updated_at
                                 }
                             }
-                            ${apitoListRootField(resource)}Count(${countArguments}) {
+                            ${apitoMultipleResourceName(resource)}Count(${countArguments}) {
                                 total
                             }
                         }
@@ -582,7 +581,7 @@ const apitoDataProvider = (
             );
           }
 
-          const listRoot = apitoListRootField(resource);
+          const listRoot = apitoMultipleResourceName(resource);
           data = (response?.data?.[listRoot] ?? []) as unknown as TData[];
           total =
             'total' in (response?.data?.[`${listRoot}Count`] || {})
@@ -616,10 +615,8 @@ const apitoDataProvider = (
         const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
         const connectionFields = meta?.connectionFields || {};
         const aliasFields = meta?.aliasFields || {};
-        const singularField = apitoLowerCamelModelId(
-          apitoModelBaseName(resource)
-        );
-        const singularPascal = apitoSingularGraphQLName(resource);
+        const singularField = apitoModelName(resource);
+        const singularPascal = apitoSingularGraphQLTypeName(resource);
         const query = gql`
                   query Get${singularPascal}($id: String!) {
                       ${singularField}(_id: $id) {
@@ -693,31 +690,17 @@ const apitoDataProvider = (
             data:
               (
                 response?.data?.[
-                `create${apitoSingularGraphQLName(resource)}`
+                `create${apitoSingularGraphQLTypeName(resource)}`
                 ] as SingleResponseType
               )?.data ?? {},
           };
         } else {
           try {
             const { resource, variables, meta } = params;
-            const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
-            const name = apitoSingularGraphQLName(resource);
+            const fields = (meta?.fields || ['id']) as string[]; // Fallback to 'id' if fields are not provided
+            const name = apitoSingularGraphQLTypeName(resource);
 
-            const query = gql`
-                  mutation Create${name}($payload: ${name}_Create_Payload!, $connect: ${name}_Relation_Connect_Payload) {
-                      create${name}(payload: $payload, connect: $connect, status: published) {
-                          id
-                          data {
-                              ${fields.join('\n')}
-                          }
-                          meta {
-                              created_at
-                              status
-                              updated_at
-                          }
-                      }
-                  }
-              `;
+            const query = gql(buildApitoCreateMutation(resource, fields));
 
             const variableData = variables as Record<string, any>;
 
@@ -770,12 +753,11 @@ const apitoDataProvider = (
       try {
         const { resource, variables, meta } = params;
         const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
-        const modelBase = apitoModelBaseName(resource);
-        const listPascal = apitoListGraphQLName(resource);
+        const listPascal = apitoListGraphQLTypeName(resource);
         const upsertPayloadType = apitoGraphQLTypeName(
-          `${modelBase}List_Upsert_Payload`
+          `${apitoMultipleResourceName(resource)}_Upsert_Payload`
         );
-        const singularPascal = apitoSingularGraphQLName(resource);
+        const singularPascal = apitoSingularGraphQLTypeName(resource);
 
         const mutation = gql`
                   mutation Upsert${listPascal}($payloads: [${upsertPayloadType}!]!, $connect: ${singularPascal}_Relation_Connect_Payload) {
@@ -857,14 +839,14 @@ const apitoDataProvider = (
             data:
               (
                 response?.data?.[
-                `update${apitoSingularGraphQLName(resource)}`
+                `update${apitoSingularGraphQLTypeName(resource)}`
                 ] as SingleResponseType
               )?.data ?? {},
           };
         } else {
           const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
           const deltaUpdate = meta?.deltaUpdate || false;
-          const name = apitoSingularGraphQLName(resource);
+          const name = apitoSingularGraphQLTypeName(resource);
           query = gql`
                       mutation Update${name}(
                           $id: String!,
@@ -927,7 +909,7 @@ const apitoDataProvider = (
 
     async deleteOne({ resource, id }) {
       try {
-        const name = apitoSingularGraphQLName(resource);
+        const name = apitoSingularGraphQLTypeName(resource);
 
         const query = gql`
                   mutation Delete${name}($ids: [String]!) {

@@ -5,6 +5,46 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-04-19
+
+### Fixed
+
+- **All-lowercase Refine resources** (e.g. `foodcategories` from slugs): `singularize` produced run-on singulars (`foodcategory`) so list fields became `foodcategoryList` instead of explorer-correct `foodCategoryList`. Added `repairRunonLowercaseCompoundSingular` after `SingularResourceName` logic to recover common compound tails (`…category`, `…account`, `…draft`, and `food|bank|work|stock|back…order`) so names match Apito `definedModel.Name` casing when the slug omits inner capitals.
+
+## [0.5.0] - 2026-04-19
+
+### Changed
+
+- **BREAKING (graphql-names API)**: Removed `apitoModelBaseName`, `apitoLowerCamelModelId`, `apitoListRootField`, `apitoSingularGraphQLName`, `apitoListGraphQLName`, and `apitoConnectionModelIdFromResource`. Naming is now **1:1 with Apito** via explicit ports of `utility.SingularResourceName`, `utility.MultipleResourceName`, and `utility.GraphQLTypeName` (`open-core/utility/name_extractor.go`, `graphql_typename.go`) plus filter helpers aligned with `open-core/schemas/objects/search_filter_arg.go` / `public_schema_builder_build.go`.
+- **Dependency**: Replaced `pluralize` with npm **`inflection`** (Rails-style rules, matches Go `github.com/jinzhu/inflection`).
+
+### Added
+
+- **`apitoModelName`**, **`apitoMultipleResourceName`**, **`apitoSingularGraphQLTypeName`**, **`apitoListGraphQLTypeName`**, **`apitoListCountGraphQLTypeName`**, **`apitoWhereInputType`**, **`apitoSortInputType`**, **`apitoListKeyConditionType`**, **`apitoListCountKeyConditionType`**, **`apitoListCountWhereInputType`** in `src/apitoGraphqlNames.ts`.
+- **`src/fixtures/goVectors.json`**: golden vectors from the engine’s Go `utility` package; Jest asserts TS output matches for every row.
+
+## [0.4.3] - 2026-04-19
+
+### Fixed
+
+- **List / count / getOne root fields**: `apitoListRootField` and `getOne` now follow Apito `utility.SingularResourceName` / `MultipleResourceName` (Go `strcase.ToLowerCamel` + `inflection.Singular`), e.g. `bankAccounts` → `bankAccountList` / `bankAccount`, not `bankaccountList` / `bankaccount`. This matches the GraphQL explorer for compound model names (`foodOrderList`, `bankAccountList`, …).
+- **`$connection` / relation filter types** for compound Refine resources: when the camel singular has inner capitals (`bankAccount`), types now use snake id (`bank_account` → `BANK_ACCOUNT_CONNECTION_FILTER_CONDITION`) to align with typical Apito `definedModel.Name` storage; single-token names still use flattened `apitoModelBaseName`.
+
+### Added
+
+- **`strcaseToLowerCamel`**, **`apitoSingularResourceName`**, and **`apitoConnectionModelIdFromResource`** in `apitoGraphqlNames.ts` (`strcaseToLowerCamel` is an ASCII port of `github.com/iancoleman/strcase`).
+
+## [0.4.2] - 2026-04-19
+
+### Added
+
+- **`buildApitoCreateMutation(resource, fields)`** in `apitoGraphqlNames.ts`: returns the same `create*` mutation document the data provider uses (`Foodorder_*` / `createFoodorder`, not `FoodOrder_*` / `createFoodOrder`).
+- **Package export `refine-apito/graphql-names`** (dual `tsup` entry) so apps can import naming helpers and the mutation builder without hand-copying GraphQL.
+
+### Changed
+
+- **`create()`** default path now builds the mutation via `buildApitoCreateMutation` (single source of truth).
+
 ## [0.4.1] - 2026-04-18
 
 ### Fixed

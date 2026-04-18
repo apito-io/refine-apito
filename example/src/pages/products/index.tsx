@@ -14,7 +14,7 @@ import { SearchOutlined } from '@ant-design/icons';
 import { Input, Form, Table, Space, Select } from 'antd';
 
 export const ProductList: React.FC = () => {
-  const { tableProps, sorters, filters } = useTable({
+  const { tableProps, sorters } = useTable({
     meta: {
       // Specify the fields you want to retrieve from Apito
       fields: ['name', 'price', 'description', 'category', 'stock', 'status'],

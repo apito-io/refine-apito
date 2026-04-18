@@ -299,6 +299,37 @@ In this example:
 - The `waiter` connection field specification from `connectionFields` is used for the alias
 - This allows you to get the same employee data under two different names in your response
 
+### GraphQL names (1:1 with Apito public schema builder)
+
+The provider and `refine-apito/graphql-names` mirror the same helpers the engine uses when registering queries and mutations:
+
+- `utility.SingularResourceName` / `MultipleResourceName` — Apito engine `open-core/utility/name_extractor.go` (`strcase.ToLowerCamel` + `inflection.Singular`, with `List` / `ListCount` suffix handling)
+- `utility.GraphQLTypeName` — `open-core/utility/graphql_typename.go`
+- Filter input names — `open-core/schemas/objects/search_filter_arg.go` (`strings.ToUpper(name + "_…")` on the same `name` values the builder passes)
+
+Example: Refine resource `foodOrders` → model name `foodOrder` → GraphQL type fragment **`Foodorder`** → **`Foodorder_Create_Payload`**, **`createFoodorder`**. List root field is **`foodOrderList`**; `$connection` uses **`FOODORDER_CONNECTION_FILTER_CONDITION`** (uppercase of `foodOrder + "_Connection_Filter_Condition"`). Writing Refine-style **`FoodOrder_*`** / **`createFoodOrder`** will not match the schema.
+
+**Fix:** use the exported helpers (or default provider methods) instead of hand-typed strings:
+
+```ts
+import {
+  apitoSingularGraphQLTypeName,
+  apitoMultipleResourceName,
+  buildApitoCreateMutation,
+} from 'refine-apito/graphql-names';
+import { gql } from '@urql/core';
+
+const typeFragment = apitoSingularGraphQLTypeName('foodOrders'); // "Foodorder"
+const listField = apitoMultipleResourceName('foodOrders'); // "foodOrderList"
+const doc = gql(buildApitoCreateMutation('foodOrders', ['order_no', 'date']));
+```
+
+Parity with Go is enforced in tests via [`src/fixtures/goVectors.json`](src/fixtures/goVectors.json) (vectors produced from the engine’s `utility` package).
+
+**Refine `resource` casing:** Prefer camelCase plurals that match Apito (`foodCategories`, `bankAccounts`) so naming matches Go `SingularResourceName` exactly. If you must use an all-lowercase slug (`foodcategories`), `0.5.1+` repairs common compound singulars so list fields stay `foodCategoryList`, not `foodcategoryList`.
+
+Prefer the default `create()` / `getList()` without `meta.gqlMutation` / `meta.gqlQuery` when possible so generated documents always track the engine.
+
 ### Error Handling
 
 The data provider includes comprehensive error handling for both GraphQL and network errors. All errors are converted to Refine's `HttpError` format for consistent error handling throughout your application.
