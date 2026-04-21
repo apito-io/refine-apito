@@ -1,5 +1,5 @@
 {
-  "version": "0.5.1",
+  "version": "1.0.0",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -19,7 +19,8 @@
   "files": [
     "dist",
     "src",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "GRAPHQL_NAMES.md"
   ],
   "engines": {
     "node": ">=16"

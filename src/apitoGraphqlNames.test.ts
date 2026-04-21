@@ -1,7 +1,6 @@
-import goVectorsJson from './fixtures/goVectors.json';
+import namingVectorsJson from './fixtures/naming_vectors.json';
 import {
   apitoConnectionFilterConditionType,
-  apitoGraphQLTypeName,
   apitoListGraphQLTypeName,
   apitoMultipleResourceName,
   apitoSingularGraphQLTypeName,
@@ -11,13 +10,19 @@ import {
   apitoSortInputType,
   apitoListKeyConditionType,
   apitoListCountKeyConditionType,
+  apitoListCountSortInputType,
   apitoListCountWhereInputType,
   buildApitoCreateMutation,
-  strcaseToLowerCamel,
   apitoSingularResourceName,
+  canonicalizeModelName,
+  formatApitoConnectionSubselections,
+  apitoStoredSnakeModelId,
+  apitoMutationConnectHasOneIdField,
+  apitoMutationConnectHasManyIdsField,
+  apitoConnectionFieldNameForRelation,
 } from './apitoGraphqlNames';
 
-type GoVectorRow = {
+type VectorRow = {
   input: string;
   singularResourceName: string;
   multipleResourceName: string;
@@ -25,89 +30,149 @@ type GoVectorRow = {
   graphqlTypeNamePlural: string;
 };
 
-const goVectors = goVectorsJson as GoVectorRow[];
+const namingVectors = namingVectorsJson as VectorRow[];
 
-describe('apitoGraphqlNames Go parity (goVectors.json)', () => {
-  test.each(goVectors.map((row) => [row.input, row] as const))(
-    'matches engine for %s',
+describe('naming_vectors.json parity', () => {
+  test.each(namingVectors.map((row) => [row.input, row] as const))(
+    'resource %s',
     (input, row) => {
-      const {
-        singularResourceName,
-        multipleResourceName,
-        graphqlTypeName,
-        graphqlTypeNamePlural,
-      } = row;
-      expect(apitoSingularResourceName(input)).toBe(singularResourceName);
-      expect(apitoMultipleResourceName(input)).toBe(multipleResourceName);
-      expect(apitoModelName(input)).toBe(singularResourceName);
-      expect(apitoSingularGraphQLTypeName(input)).toBe(graphqlTypeName);
-      expect(apitoListGraphQLTypeName(input)).toBe(graphqlTypeNamePlural);
+      expect(apitoSingularResourceName(input)).toBe(row.singularResourceName);
+      expect(apitoMultipleResourceName(input)).toBe(row.multipleResourceName);
+      expect(apitoModelName(input)).toBe(row.singularResourceName);
+      expect(apitoSingularGraphQLTypeName(input)).toBe(row.graphqlTypeName);
+      expect(apitoListGraphQLTypeName(input)).toBe(row.graphqlTypeNamePlural);
     }
   );
 });
 
-describe('apitoGraphqlNames', () => {
-  test('apitoGraphQLTypeName matches Apito Go utility for foodcategory', () => {
-    expect(apitoGraphQLTypeName('foodcategory')).toBe('Foodcategory');
-    expect(apitoGraphQLTypeName('foodcategoryList')).toBe('Foodcategorylist');
-    expect(apitoGraphQLTypeName('foodcategoryList_Upsert_Payload')).toBe(
-      'Foodcategorylist_Upsert_Payload'
+describe('Go SingularResourceName parity (no English singularize)', () => {
+  test('singular vs plural legacy camel ids', () => {
+    expect(apitoSingularResourceName('food')).toBe('food');
+    expect(apitoMultipleResourceName('food')).toBe('foodList');
+    expect(apitoSingularResourceName('foods')).toBe('foods');
+    expect(apitoMultipleResourceName('foods')).toBe('foodsList');
+  });
+});
+
+describe('canonicalizeModelName', () => {
+  test('normalizes compound names', () => {
+    expect(canonicalizeModelName('foodOrder')).toBe('food_order');
+    expect(canonicalizeModelName('food_orders')).toBe('food_order');
+  });
+  test('rejects run-on', () => {
+    expect(() => canonicalizeModelName('foodorder')).toThrow();
+  });
+});
+
+describe('mutation connect / disconnect field names (stored model id + _id / _ids)', () => {
+  test('has_one from camel relation id', () => {
+    expect(apitoMutationConnectHasOneIdField('foodCategory')).toBe(
+      'food_category_id'
+    );
+    expect(apitoMutationConnectHasOneIdField('food_category')).toBe(
+      'food_category_id'
     );
   });
-
-  test('strcaseToLowerCamel matches Go iancoleman/strcase vectors', () => {
-    expect(strcaseToLowerCamel('bank_account')).toBe('bankAccount');
-    expect(strcaseToLowerCamel('bankAccounts')).toBe('bankAccounts');
-    expect(strcaseToLowerCamel('food_orders')).toBe('foodOrders');
-    expect(strcaseToLowerCamel('foodCategories')).toBe('foodCategories');
-    expect(strcaseToLowerCamel('test_label')).toBe('testLabel');
-    expect(strcaseToLowerCamel('a_b_c')).toBe('aBC');
+  test('has_many', () => {
+    expect(apitoMutationConnectHasManyIdsField('foodOrder')).toBe(
+      'food_order_ids'
+    );
   });
+  test('apitoStoredSnakeModelId matches filter snake segment', () => {
+    expect(apitoStoredSnakeModelId('bankAccount')).toBe('bank_account');
+  });
+});
 
-  test('connection / list filter types use definedModel.Name and list GraphQL name', () => {
-    expect(apitoConnectionFilterConditionType('foods')).toBe(
-      'FOOD_CONNECTION_FILTER_CONDITION'
+describe('filter / connection types (snake model id)', () => {
+  test('bank_account-style resource', () => {
+    expect(apitoConnectionFilterConditionType('bank_account')).toBe(
+      'BANK_ACCOUNT_CONNECTION_FILTER_CONDITION'
     );
-    expect(apitoConnectionFilterConditionType('bankAccounts')).toBe(
-      'BANKACCOUNT_CONNECTION_FILTER_CONDITION'
+    expect(apitoWhereRelationFilterConditionType('bank_account')).toBe(
+      'BANK_ACCOUNT_WHERE_RELATION_FILTER_CONDITION'
     );
-    expect(apitoWhereRelationFilterConditionType('bankAccounts')).toBe(
-      'BANKACCOUNT_WHERE_RELATION_FILTER_CONDITION'
-    );
-    expect(apitoWhereInputType('bankAccounts')).toBe(
+    expect(apitoWhereInputType('bank_account')).toBe(
       'BANKACCOUNTLIST_INPUT_WHERE_PAYLOAD'
     );
-    expect(apitoSortInputType('bankAccounts')).toBe(
+    expect(apitoSortInputType('bank_account')).toBe(
       'BANKACCOUNTLIST_INPUT_SORT_PAYLOAD'
     );
-    expect(apitoListKeyConditionType('bankAccounts')).toBe(
+    expect(apitoListKeyConditionType('bank_account')).toBe(
       'BANKACCOUNTLIST_KEY_CONDITION'
     );
-    expect(apitoListCountKeyConditionType('bankAccounts')).toBe(
-      'BANKACCOUNTLIST_COUNT_KEY_CONDITION'
+    expect(apitoListCountKeyConditionType('bank_account')).toBe(
+      'BANK_ACCOUNT_LIST_COUNT_KEY_CONDITION'
     );
-    expect(apitoListCountWhereInputType('bankAccounts')).toBe(
-      'BANKACCOUNTLIST_COUNT_INPUT_WHERE_PAYLOAD'
+    expect(apitoListCountWhereInputType('bank_account')).toBe(
+      'BANK_ACCOUNT_LIST_COUNT_INPUT_WHERE_PAYLOAD'
+    );
+    expect(apitoListCountSortInputType('bank_account')).toBe(
+      'BANK_ACCOUNT_LIST_COUNT_INPUT_SORT_PAYLOAD'
     );
   });
 
-  test('all-lowercase Refine slug plural maps to Apito camel model id', () => {
-    expect(apitoSingularResourceName('foodcategories')).toBe('foodCategory');
-    expect(apitoMultipleResourceName('foodcategories')).toBe('foodCategoryList');
-    expect(apitoSingularResourceName('bankaccounts')).toBe('bankAccount');
-    expect(apitoMultipleResourceName('bankaccounts')).toBe('bankAccountList');
+  test('food_order list vs list-count where types (avoid FOODORDERLIST_COUNT_*)', () => {
+    expect(apitoWhereInputType('food_order')).toBe(
+      'FOODORDERLIST_INPUT_WHERE_PAYLOAD'
+    );
+    expect(apitoListCountWhereInputType('food_order')).toBe(
+      'FOOD_ORDER_LIST_COUNT_INPUT_WHERE_PAYLOAD'
+    );
+    expect(apitoListCountSortInputType('food_order')).toBe(
+      'FOOD_ORDER_LIST_COUNT_INPUT_SORT_PAYLOAD'
+    );
+  });
+});
+
+describe('formatApitoConnectionSubselections', () => {
+  test('normalizes legacy snake alias target to camelCase field', () => {
+    const s = formatApitoConnectionSubselections(
+      { foodCategory: 'id data { name }' },
+      { foodCategory: 'food_category' }
+    );
+    expect(s).toContain('foodCategory {');
+    expect(s).not.toContain('food_category');
   });
 
-  test('buildApitoCreateMutation uses Foodorder / createFoodorder for foodOrders', () => {
-    const doc = buildApitoCreateMutation('foodOrders', [
-      'order_no',
-      'total_amount',
-    ]);
-    expect(doc).toContain('mutation CreateFoodorder(');
-    expect(doc).toContain('Foodorder_Create_Payload!');
-    expect(doc).toContain('Foodorder_Relation_Connect_Payload');
-    expect(doc).toContain('createFoodorder(');
-    expect(doc).not.toContain('FoodOrder');
-    expect(doc).not.toContain('createFoodOrder');
+  test('collapses redundant alias when response key matches schema field', () => {
+    const s = formatApitoConnectionSubselections(
+      { foodCategory: 'id' },
+      { foodCategory: 'foodCategory' }
+    );
+    expect(s.trim()).toBe('foodCategory { id }');
+  });
+
+  test('keeps distinct response key vs schema field', () => {
+    const s = formatApitoConnectionSubselections(
+      { cat: 'id' },
+      { cat: 'foodCategory' }
+    );
+    expect(s.trim()).toBe('cat: foodCategory { id }');
+  });
+
+  test('normalizes connectionFields key without alias map', () => {
+    const s = formatApitoConnectionSubselections({
+      food_category: 'id',
+    });
+    expect(s.trim()).toBe('foodCategory { id }');
+  });
+
+  test('has_many connection field is model List not singular (food → foodList)', () => {
+    expect(apitoConnectionFieldNameForRelation('food', 'has_many')).toBe('foodList');
+    expect(apitoMultipleResourceName('food')).toBe('foodList');
+    const wrongSingularKey = formatApitoConnectionSubselections({ food: 'id' });
+    expect(wrongSingularKey.trim()).toBe('food { id }');
+    const hasManyKey = formatApitoConnectionSubselections({ foodList: 'id' });
+    expect(hasManyKey.trim()).toBe('foodList { id }');
+  });
+});
+
+describe('buildApitoCreateMutation', () => {
+  test('uses Food_Order_Create_Payload for food_order model', () => {
+    const doc = buildApitoCreateMutation('food_order', ['name']);
+    expect(doc).toContain('mutation CreateFoodOrder(');
+    expect(doc).toContain('Food_Order_Create_Payload!');
+    expect(doc).toContain('Food_Order_Relation_Connect_Payload');
+    expect(doc).toContain('createFoodOrder(');
   });
 });

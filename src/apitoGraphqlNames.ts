@@ -1,197 +1,346 @@
+/**
+ * Apito model naming aligned with `open-core/utility/apito_naming.go`.
+ * Store canonical model ids as snake_case (e.g. `food_order`); derive GraphQL names with pure string ops.
+ */
+
 import { singularize } from 'inflection';
 
-/**
- * Port of `github.com/iancoleman/strcase` `ToLowerCamel` (`toCamelInitCase` with initCase=false),
- * ASCII-only (matches Go’s `[]byte` loop for Apito model ids).
- * Used by `utility.SingularResourceName` (`name_extractor.go`).
- */
-export function strcaseToLowerCamel(s: string): string {
-  s = s.trim();
-  if (!s) return s;
-  let out = '';
-  let capNext = false;
-  let prevIsCap = false;
-  for (let i = 0; i < s.length; i++) {
-    const orig = s.charCodeAt(i);
-    let v = orig;
-    const vIsCap = orig >= 65 && orig <= 90; // A-Z
-    const vIsLow = orig >= 97 && orig <= 122; // a-z
-    if (capNext) {
-      if (vIsLow) {
-        v -= 32;
-      }
-    } else if (i === 0) {
-      if (vIsCap) {
-        v += 32;
-      }
-    } else if (prevIsCap && vIsCap) {
-      v += 32;
-    }
-    prevIsCap = vIsCap;
+const singularKeepAsIs = new Set([
+  'news',
+  'data',
+  'media',
+  'analytics',
+  'series',
+  'species',
+]);
 
-    if (vIsCap || vIsLow) {
-      out += String.fromCharCode(v);
-      capNext = false;
-    } else if (orig >= 48 && orig <= 57) {
-      out += String.fromCharCode(v);
-      capNext = true;
-    } else {
-      capNext =
-        orig === 95 || orig === 32 || orig === 45 || orig === 46;
+const canonicalIDRe = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
+
+/** Same boundary rule as Go `rejectRunOnLowercaseConcat` (len >= 9, all a-z). */
+function rejectRunOnLowercaseConcat(raw: string): void {
+  if (/[\s_\-]/.test(raw)) return;
+  if (/[a-z][A-Z]/.test(raw)) return;
+  if (!/^[a-z]+$/.test(raw)) return;
+  if (raw.length >= 9) {
+    throw new Error(
+      'model name needs a word boundary between words: use food_order, food-order, foodOrder, or "food order"'
+    );
+  }
+}
+
+function splitCamelPieces(piece: string): string[] {
+  const spaced = piece.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+  return spaced
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((s) => s.replace(/[^a-zA-Z0-9]/g, '').toLowerCase())
+    .filter(Boolean);
+}
+
+function splitIntoWordSegments(raw: string): string[] {
+  const normalized = raw.trim().replace(/-/g, '_');
+  const chunks = normalized.split(/[\s_]+/).filter((c) => c.length > 0);
+  const segments: string[] = [];
+  for (const chunk of chunks) {
+    const lettersOnly = chunk.replace(/[^a-zA-Z0-9]/g, '');
+    const pieces =
+      lettersOnly === chunk ? splitCamelPieces(chunk) : [lettersOnly.toLowerCase()];
+    for (const p of pieces) {
+      const s = p.replace(/[^a-z0-9]/gi, '').toLowerCase();
+      if (s) segments.push(s);
     }
   }
+  return segments;
+}
+
+function singularizeSegment(seg: string): string {
+  if (singularKeepAsIs.has(seg)) return seg;
+  return singularize(seg);
+}
+
+/**
+ * Normalizes admin input to canonical snake_case singular model id (matches Go `CanonicalizeModelName`).
+ */
+export function canonicalizeModelName(raw: string): string {
+  const t = raw.trim();
+  if (!t) throw new Error('model name is required');
+  rejectRunOnLowercaseConcat(t);
+  const segments = splitIntoWordSegments(t);
+  if (segments.length === 0) throw new Error('invalid model name');
+  segments[segments.length - 1] = singularizeSegment(
+    segments[segments.length - 1]!
+  );
+  const out = segments.join('_');
+  if (!canonicalIDRe.test(out)) throw new Error('invalid model name');
+  reservedCheck(out);
   return out;
 }
 
-/**
- * Refine / URL slugs often use all-lowercase plurals (`foodcategories`). `inflection` then yields
- * run-on singulars (`foodcategory`) which do **not** match Apito `definedModel.Name` (`foodCategory`)
- * and break list roots (`foodCategoryList`). When the singular is letters-only lowercase, recover
- * common compound tails so GraphQL field names match the explorer.
- *
- * Inputs that already contain capitals, `_`, or `-` are unchanged (still 1:1 with Go `SingularResourceName`).
- */
-export function repairRunonLowercaseCompoundSingular(singular: string): string {
-  if (!/^[a-z]+$/.test(singular)) {
-    return singular;
+function reservedCheck(canonical: string): void {
+  switch (canonical) {
+    case 'list':
+      throw new Error(
+        'naming a Model `List` is not allowed. Apito uses List for plural resources.'
+      );
+    case 'user':
+      throw new Error(
+        'naming a Model `User` is protected. Add the Authentication module from Settings.'
+      );
+    case 'system':
+      throw new Error('naming a Model `System` is not allowed.');
+    case 'function':
+      throw new Error('naming a Model `Function` is not allowed.');
   }
-  const tailCompound =
-    /^([a-z]{2,})(category|account|draft)$/.exec(singular);
-  if (tailCompound) {
-    const [, head, tail] = tailCompound;
-    const cap =
-      tail === 'category'
-        ? 'Category'
-        : tail === 'account'
-          ? 'Account'
-          : 'Draft';
-    return head + cap;
-  }
-  const orderCompound = /^([a-z]+)(order)$/.exec(singular);
-  if (
-    orderCompound &&
-    /^(food|bank|work|stock|back)$/.test(orderCompound[1])
-  ) {
-    return orderCompound[1] + 'Order';
-  }
-  return singular;
+}
+
+/** lowerCamel from canonical snake (`food_order` → `foodOrder`). */
+export function camelFromCanonical(canonical: string): string {
+  const parts = canonical.split('_').filter(Boolean);
+  return parts
+    .map((p, i) =>
+      i === 0
+        ? p.toLowerCase()
+        : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+    )
+    .join('');
+}
+
+/** PascalCase without underscores (`food_order` → `FoodOrder`). */
+export function pascalFromCanonical(canonical: string): string {
+  return canonical
+    .split('_')
+    .filter(Boolean)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+    .join('');
+}
+
+/** Legacy camel id → Pascal (`foodCategory` → `FoodCategory`). */
+export function pascalFromAnyModelId(modelId: string): string {
+  if (!modelId) return '';
+  if (modelId.includes('_')) return pascalFromCanonical(modelId);
+  const segs = splitCamelPieces(modelId);
+  return segs
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
+    .join('');
+}
+
+export function listGraphQLTypeName(modelId: string): string {
+  return `${pascalFromAnyModelId(apitoSingularResourceName(modelId))}List`;
+}
+
+/** Matches Go `GraphQLComposedTypeName` (e.g. `Create_Payload`, `List_Upsert_Payload`). */
+export function apitoGraphQLComposedTypeName(modelId: string, suffix: string): string {
+  const singular = apitoSingularResourceName(modelId);
+  const suf = suffix.replace(/^_/, '').split('_').filter(Boolean);
+  const modelSegs = singular.includes('_')
+    ? singular.split('_').filter(Boolean)
+    : splitCamelPieces(singular).map((s) => s.toLowerCase());
+  const extra = suf.flatMap((chunk) =>
+    splitCamelPieces(chunk).map((x) => x.toLowerCase())
+  );
+  const all = [...modelSegs, ...extra];
+  return all
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+    .join('_');
 }
 
 /**
- * Mirrors Apito `utility.SingularResourceName(name)` (`open-core/utility/name_extractor.go`).
- * `ListCount` is checked before `List` so inputs like `fooListCount` match Go’s branch order.
+ * lowerCamel field id for GraphQL root fields — matches Go `utility.SingularResourceName`:
+ * trim `List` / `ListCount`, then camel-case the remainder (`CamelFromAny`), **without**
+ * English plural→singular inflection (that diverged from the engine and broke variable types).
  */
 export function apitoSingularResourceName(name: string): string {
-  const t = name.trim();
-  const lc = strcaseToLowerCamel(t);
-  let raw: string;
-  if (t.endsWith('ListCount')) {
-    raw = singularize(lc).replace(/ListCount$/, '');
-  } else if (t.endsWith('List')) {
-    raw = singularize(lc).replace(/List$/, '');
-  } else {
-    raw = singularize(lc);
+  let t = name.trim();
+  if (t.endsWith('ListCount')) t = t.slice(0, -'ListCount'.length);
+  else if (t.endsWith('List')) t = t.slice(0, -'List'.length);
+  t = t.trim();
+  if (!t) return '';
+  if (t.includes('_')) {
+    return camelFromCanonical(t);
   }
-  return repairRunonLowercaseCompoundSingular(raw);
+  const segs = splitCamelPieces(t);
+  if (segs.length === 0) return t.toLowerCase();
+  return segs
+    .map((s, i) =>
+      i === 0
+        ? s.toLowerCase()
+        : s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+    )
+    .join('');
 }
 
-/** Alias: same as `definedModel.Name` after engine normalization. */
 export const apitoModelName = apitoSingularResourceName;
 
-/**
- * Mirrors Apito `utility.MultipleResourceName(name)` → `SingularResourceName(name) + "List"`.
- */
 export function apitoMultipleResourceName(name: string): string {
   return `${apitoSingularResourceName(name)}List`;
 }
 
 /**
- * Mirrors Apito `utility.GraphQLTypeName` (`open-core/utility/graphql_typename.go`):
- * split on `_`, English title per segment (first char upper, rest lower per segment).
+ * Public GraphQL field name for a **relation** on list/getOne rows (matches engine `attachConnectionFields`):
+ * - **has_many** → `{singular}List` (e.g. model `food` → `foodList`), **not** `food`.
+ * - **has_one** → lowerCamel singular (e.g. `customer`, `foodCategory`).
+ *
+ * Use this for `meta.connectionFields` **keys** so the generated selection matches the schema.
  */
-export function apitoGraphQLTypeName(modelId: string): string {
-  const parts = modelId
-    .trim()
-    .split('_')
-    .filter((p) => p.length > 0);
-  const titleSeg = (s: string) =>
-    s.charAt(0).toLocaleUpperCase('en-US') +
-    s.slice(1).toLocaleLowerCase('en-US');
-  return parts.map(titleSeg).join('_');
-}
-
-/** `GraphQLTypeName(MultipleResourceName(resource))` — list filter / sort / operation name base. */
-export function apitoListGraphQLTypeName(resource: string): string {
-  return apitoGraphQLTypeName(apitoMultipleResourceName(resource));
-}
-
-/** `GraphQLTypeName(MultipleResourceName(resource) + "_Count")` — count query filter name base. */
-export function apitoListCountGraphQLTypeName(resource: string): string {
-  return apitoGraphQLTypeName(`${apitoMultipleResourceName(resource)}_Count`);
-}
-
-/** `GraphQLTypeName(apitoModelName(resource))` — singular object / mutation type base. */
-export function apitoSingularGraphQLTypeName(resource: string): string {
-  return apitoGraphQLTypeName(apitoModelName(resource));
-}
-
-/** `strings.ToUpper(name + "_Connection_Filter_Condition")` with `name = definedModel.Name` (here: `apitoModelName`). */
-export function apitoConnectionFilterConditionType(resource: string): string {
-  return (
-    apitoModelName(resource) + '_Connection_Filter_Condition'
-  ).toUpperCase();
-}
-
-/** `BuildWhereRelationConditionArgument` name prefix. */
-export function apitoWhereRelationFilterConditionType(resource: string): string {
-  return (
-    apitoModelName(resource) + '_Where_Relation_Filter_Condition'
-  ).toUpperCase();
-}
-
-/** List `where` input (BuildFilterArgument with list GraphQL name). */
-export function apitoWhereInputType(resource: string): string {
-  return (
-    apitoListGraphQLTypeName(resource) + '_Input_Where_Payload'
-  ).toUpperCase();
-}
-
-/** List `sort` input. */
-export function apitoSortInputType(resource: string): string {
-  return (
-    apitoListGraphQLTypeName(resource) + '_Input_Sort_Payload'
-  ).toUpperCase();
-}
-
-/** List `_key` filter input. */
-export function apitoListKeyConditionType(resource: string): string {
-  return (apitoListGraphQLTypeName(resource) + '_Key_Condition').toUpperCase();
-}
-
-/** Count query `_key` filter input. */
-export function apitoListCountKeyConditionType(resource: string): string {
-  return (
-    apitoListCountGraphQLTypeName(resource) + '_Key_Condition'
-  ).toUpperCase();
-}
-
-/** Count query `where` input. */
-export function apitoListCountWhereInputType(resource: string): string {
-  return (
-    apitoListCountGraphQLTypeName(resource) + '_Input_Where_Payload'
-  ).toUpperCase();
+export function apitoConnectionFieldNameForRelation(
+  relatedModelRef: string,
+  relation: 'has_one' | 'has_many'
+): string {
+  if (relation === 'has_many') {
+    return apitoMultipleResourceName(relatedModelRef);
+  }
+  return apitoSingularResourceName(relatedModelRef);
 }
 
 /**
- * Default `create*` mutation document (matches `public_schema_builder_build.go` single create).
+ * Maps `meta.connectionFields` / `aliasFields` keys and targets to engine GraphQL field names.
+ * Unlike {@link apitoSingularResourceName} alone, this does **not** strip a trailing `List` from
+ * connection field ids such as **`foodList`** (that strip is for list *operation* names like `foodOrderList` → `foodOrder`).
  */
+export function apitoGraphqlConnectionFieldFromMetaKey(key: string): string {
+  const k = key.trim();
+  if (!k) return k;
+  if (k.includes('_')) {
+    return apitoSingularResourceName(k);
+  }
+  if (/List$/i.test(k) && !/ListCount$/i.test(k)) {
+    return k.charAt(0).toLowerCase() + k.slice(1);
+  }
+  return apitoSingularResourceName(k);
+}
+
+export function apitoGraphQLTypeNameForFilterArg(modelId: string): string {
+  return listGraphQLTypeName(modelId);
+}
+
+export function apitoListGraphQLTypeName(resource: string): string {
+  return listGraphQLTypeName(resource);
+}
+
+export function apitoListCountGraphQLTypeName(resource: string): string {
+  return apitoGraphQLComposedTypeName(resource, 'List_Count');
+}
+
+export function apitoSingularGraphQLTypeName(resource: string): string {
+  return pascalFromAnyModelId(apitoSingularResourceName(resource));
+}
+
+/**
+ * Stored model id as snake_case (matches engine `Connection.Model` / filter `definedModel.Name`).
+ * Use this when building mutation `connect` / `disconnect` keys: `{storedId}_id` / `{storedId}_ids`.
+ */
+export function apitoStoredSnakeModelId(resource: string): string {
+  const singular = apitoSingularResourceName(resource);
+  if (singular.includes('_')) return singular;
+  return splitCamelPieces(singular).join('_');
+}
+
+/** `connect` / `disconnect` field for a has_one relation: `{stored_model_id}_id` (e.g. `food_category_id`). */
+export function apitoMutationConnectHasOneIdField(relatedModelRef: string): string {
+  return `${apitoStoredSnakeModelId(relatedModelRef)}_id`;
+}
+
+/** `connect` / `disconnect` field for a has_many relation: `{stored_model_id}_ids`. */
+export function apitoMutationConnectHasManyIdsField(
+  relatedModelRef: string
+): string {
+  return `${apitoStoredSnakeModelId(relatedModelRef)}_ids`;
+}
+
+export function apitoConnectionFilterConditionType(resource: string): string {
+  return `${apitoStoredSnakeModelId(resource)}_Connection_Filter_Condition`.toUpperCase();
+}
+
+export function apitoWhereRelationFilterConditionType(resource: string): string {
+  return `${apitoStoredSnakeModelId(resource)}_Where_Relation_Filter_Condition`.toUpperCase();
+}
+
+/**
+ * List query `where` / sort / `_key` payload types for `*List` fields (e.g. `FOODORDERLIST_INPUT_WHERE_PAYLOAD`).
+ * Do **not** use this for `*ListCount` — use {@link apitoListCountWhereInputType} / {@link apitoListCountSortInputType}.
+ */
+export function apitoWhereInputType(resource: string): string {
+  return `${listGraphQLTypeName(resource)}_Input_Where_Payload`.toUpperCase();
+}
+
+export function apitoSortInputType(resource: string): string {
+  return `${listGraphQLTypeName(resource)}_Input_Sort_Payload`.toUpperCase();
+}
+
+export function apitoListKeyConditionType(resource: string): string {
+  return `${listGraphQLTypeName(resource)}_Key_Condition`.toUpperCase();
+}
+
+export function apitoListCountKeyConditionType(resource: string): string {
+  return `${apitoGraphQLComposedTypeName(resource, 'List_Count')}_Key_Condition`.toUpperCase();
+}
+
+/**
+ * `*ListCount` query `where` argument type (e.g. `FOOD_ORDER_LIST_COUNT_INPUT_WHERE_PAYLOAD`).
+ * This is **not** `FoodOrderList` + `_Count_*` (wrong: `FOODORDERLIST_COUNT_*`); the engine uses
+ * {@link apitoGraphQLComposedTypeName} with suffix `List_Count` (underscores between word segments).
+ */
+export function apitoListCountWhereInputType(resource: string): string {
+  return `${apitoGraphQLComposedTypeName(resource, 'List_Count')}_Input_Where_Payload`.toUpperCase();
+}
+
+/** `*ListCount` query `sort` argument type (e.g. `FOOD_ORDER_LIST_COUNT_INPUT_SORT_PAYLOAD`). */
+export function apitoListCountSortInputType(resource: string): string {
+  return `${apitoGraphQLComposedTypeName(resource, 'List_Count')}_Input_Sort_Payload`.toUpperCase();
+}
+
+/**
+ * Builds nested relation field lines for list/getOne GraphQL selection sets.
+ * Normalizes stored snake_case ids and legacy names to the same lowerCamel field names as the Apito engine
+ * (`apitoSingularResourceName`), so `aliasFields: { foodCategory: "food_category" }` still resolves to `foodCategory`.
+ *
+ * - `connectionFields` keys are the **client/response key** when `aliasFields` is set; otherwise the key is
+ *   normalized to the schema field name.
+ * - `aliasFields[key]` when present is the **schema field name** (may be legacy `food_category`); it is normalized.
+ * - **has_many** relations use **`{model}List`** on the parent type (e.g. `foodList`), not the singular `food`.
+ *   Use {@link apitoConnectionFieldNameForRelation}(..., `'has_many'`) or {@link apitoMultipleResourceName} for keys.
+ *   Keys like `foodList` are preserved (see {@link apitoGraphqlConnectionFieldFromMetaKey}).
+ */
+export function formatApitoConnectionSubselections(
+  connectionFields: Record<string, string>,
+  aliasFields: Record<string, string> = {}
+): string {
+  return Object.keys(connectionFields)
+    .map((key) => {
+      const selection = connectionFields[key];
+      const rawTarget = aliasFields[key];
+      const hasExplicitAlias =
+        rawTarget !== undefined &&
+        rawTarget !== null &&
+        String(rawTarget).trim() !== '';
+
+      const targetField = apitoGraphqlConnectionFieldFromMetaKey(
+        hasExplicitAlias ? String(rawTarget).trim() : key
+      );
+
+      if (hasExplicitAlias) {
+        const responseKey = key;
+        if (responseKey === targetField) {
+          return `${targetField} { ${selection} }`;
+        }
+        return `${responseKey}: ${targetField} { ${selection} }`;
+      }
+
+      return `${targetField} { ${selection} }`;
+    })
+    .join('\n');
+}
+
 export function buildApitoCreateMutation(
   resource: string,
   fields: string[]
 ): string {
-  const typeBase = apitoSingularGraphQLTypeName(resource);
-  return `                  mutation Create${typeBase}($payload: ${typeBase}_Create_Payload!, $connect: ${typeBase}_Relation_Connect_Payload) {
-                      create${typeBase}(payload: $payload, connect: $connect, status: published) {
+  const id = apitoSingularResourceName(resource);
+  const pascal = pascalFromAnyModelId(id);
+  const payload = apitoGraphQLComposedTypeName(id, 'Create_Payload');
+  const rel = apitoGraphQLComposedTypeName(id, 'Relation_Connect_Payload');
+  return `                  mutation Create${pascal}($payload: ${payload}!, $connect: ${rel}) {
+                      create${pascal}(payload: $payload, connect: $connect, status: published) {
                           id
                           data {
                               ${fields.join('\n')}

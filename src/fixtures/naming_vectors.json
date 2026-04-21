@@ -1,0 +1,16 @@
+[
+  {
+    "input": "food_order",
+    "singularResourceName": "foodOrder",
+    "multipleResourceName": "foodOrderList",
+    "graphqlTypeName": "FoodOrder",
+    "graphqlTypeNamePlural": "FoodOrderList"
+  },
+  {
+    "input": "bankAccounts",
+    "singularResourceName": "bankAccounts",
+    "multipleResourceName": "bankAccountsList",
+    "graphqlTypeName": "BankAccounts",
+    "graphqlTypeNamePlural": "BankAccountsList"
+  }
+]

@@ -5,6 +5,35 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-04-20
+
+### Changed
+
+- **BREAKING**: Aligns with Apito Engine **canonical snake_case** model ids and new GraphQL type names (`PascalFromAnyModelID`, `GraphQLComposedTypeName`, `ListGraphQLTypeName`) from `open-core/utility/apito_naming.go` / `public_schema_builder_build.go`.
+- Set Refine `resource` to the **same canonical id** as the Apito model (e.g. `food_order`) or legacy plural camel (`foodOrders`) — helpers singularize and derive `foodOrderList`, `Food_Order_Create_Payload`, `createFoodOrder`, etc.
+- **Connection filter enums** use the snake model id (e.g. `FOOD_ORDER_CONNECTION_FILTER_CONDITION`).
+- Exports: `canonicalizeModelName`, `apitoGraphQLComposedTypeName`, `camelFromCanonical`, `pascalFromCanonical`, `pascalFromAnyModelId`; removed obsolete `apitoGraphQLTypeName` / `strcaseToLowerCamel` from the public surface where superseded.
+
+### Added
+
+- `src/fixtures/naming_vectors.json` for Jest parity with engine test vectors.
+- **`apitoListCountSortInputType`**: `*ListCount` `sort` argument (e.g. `FOOD_ORDER_LIST_COUNT_INPUT_SORT_PAYLOAD`), alongside `apitoListCountWhereInputType` / `apitoListCountKeyConditionType`.
+
+### Documentation
+
+- **`GRAPHQL_NAMES.md`**: list `where` vs `*ListCount` `where` (avoid hand-rolled `FOODORDERLIST_COUNT_*`; use `apitoListCountWhereInputType`).
+
+### Fixed
+
+- **`meta.connectionFields` / `meta.aliasFields`**: relation selections now normalize schema field names with `apitoSingularResourceName`, so legacy alias targets like `food_category` resolve to **`foodCategory`** (matches engine root/relation fields). Redundant `foodCategory: foodCategory` aliases are omitted in the printed query.
+- **`formatApitoConnectionSubselections`**: `connectionFields` keys ending in `List` (e.g. `foodList`) are no longer stripped to a singular GraphQL field; **has_many** fields use **`{model}List`** in the public schema.
+
+## [0.5.2] - 2026-04-19
+
+### Removed
+
+- **`repairRunonLowercaseCompoundSingular`**: dropped the hardcoded compound-tail heuristic so naming stays a straight port of Apito `utility.SingularResourceName` only. Run-on lowercase plurals (e.g. `foodcategories`) again match Go/inflection (`foodcategory`); use `foodCategories`, `food_categories`, or `food-categories` as the Refine `resource` to get `foodCategory` / `foodCategoryList`.
+
 ## [0.5.1] - 2026-04-19
 
 ### Fixed

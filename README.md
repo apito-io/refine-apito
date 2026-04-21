@@ -15,6 +15,12 @@ A data provider for [Refine v5](https://refine.dev/) that connects to [Apito](ht
 - 🐞 Debug mode for easier troubleshooting
 - 🧩 Well-organized code with separate type definitions for better debugging
 
+## GraphQL naming and `resource`
+
+Refine **`resource`** values must match the **stored Apito model id** (canonical **snake_case** such as `food_order`, or legacy camelCase where applicable). Helpers in [`src/apitoGraphqlNames.ts`](src/apitoGraphqlNames.ts) mirror the engine’s naming helpers.
+
+For the full field/type/mutation matrix (including list vs connection filter type strings), see **[GRAPHQL_NAMES.md](./GRAPHQL_NAMES.md)** and the engine doc it links to.
+
 ## Installation
 
 ```bash
@@ -326,7 +332,7 @@ const doc = gql(buildApitoCreateMutation('foodOrders', ['order_no', 'date']));
 
 Parity with Go is enforced in tests via [`src/fixtures/goVectors.json`](src/fixtures/goVectors.json) (vectors produced from the engine’s `utility` package).
 
-**Refine `resource` casing:** Prefer camelCase plurals that match Apito (`foodCategories`, `bankAccounts`) so naming matches Go `SingularResourceName` exactly. If you must use an all-lowercase slug (`foodcategories`), `0.5.1+` repairs common compound singulars so list fields stay `foodCategoryList`, not `foodcategoryList`.
+**Refine `resource` casing:** Use camelCase plurals aligned with Apito (`foodCategories`, `bankAccounts`), or snake/kebab plurals (`food_categories`, `food-categories`), so `strcase.ToLowerCamel` matches the engine. An all-lowercase run-on plural (`foodcategories`) normalizes to `foodcategory` in Go as well—it is not the same as model id `foodCategory`, so list fields will not match the explorer.
 
 Prefer the default `create()` / `getList()` without `meta.gqlMutation` / `meta.gqlQuery` when possible so generated documents always track the engine.
 

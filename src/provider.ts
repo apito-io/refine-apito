@@ -14,7 +14,7 @@ import {
 import { Client, CombinedError, cacheExchange, fetchExchange, gql } from '@urql/core';
 import {
   apitoConnectionFilterConditionType,
-  apitoGraphQLTypeName,
+  apitoGraphQLComposedTypeName,
   apitoListCountKeyConditionType,
   apitoListCountWhereInputType,
   apitoListGraphQLTypeName,
@@ -26,6 +26,7 @@ import {
   apitoWhereInputType,
   apitoWhereRelationFilterConditionType,
   buildApitoCreateMutation,
+  formatApitoConnectionSubselections,
 } from './apitoGraphqlNames';
 import {
   ApitoGraphQLError,
@@ -217,30 +218,6 @@ const handleGraphQLError = (
     message: error.message || 'An error occurred during the GraphQL operation',
     statusCode: 400,
   };
-};
-
-/**
- * Helper function to generate connection field string with alias support
- * @param connectionFields The connection fields mapping
- * @param aliasFields The alias fields mapping
- * @returns A formatted string for GraphQL query connection fields
- */
-const generateConnectionFields = (
-  connectionFields: Record<string, string>,
-  aliasFields: Record<string, string>
-) => {
-  return Object.keys(connectionFields)
-    .map((key) => {
-      // Check if this key is defined as an alias in aliasFields
-      if (aliasFields[key]) {
-        // Generate alias syntax: alias: actualField { ... }
-        return `${key}: ${aliasFields[key]} { ${connectionFields[key]} }`;
-      } else {
-        // Generate normal syntax: field { ... }
-        return `${key} { ${connectionFields[key]} }`;
-      }
-    })
-    .join('\n');
 };
 
 const apitoDataProvider = (
@@ -539,7 +516,7 @@ const apitoDataProvider = (
                                 data {
                                     ${fields.join('\n')}
                                 }
-                                ${generateConnectionFields(connectionFields, aliasFields)}
+                                ${formatApitoConnectionSubselections(connectionFields, aliasFields)}
                                 meta {
                                     created_at
                                     status
@@ -624,7 +601,7 @@ const apitoDataProvider = (
                           data {
                               ${fields.join('\n')}
                           }
-                          ${generateConnectionFields(connectionFields, aliasFields)}
+                          ${formatApitoConnectionSubselections(connectionFields, aliasFields)}
                           meta {
                               created_at
                               status
@@ -754,13 +731,17 @@ const apitoDataProvider = (
         const { resource, variables, meta } = params;
         const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
         const listPascal = apitoListGraphQLTypeName(resource);
-        const upsertPayloadType = apitoGraphQLTypeName(
-          `${apitoMultipleResourceName(resource)}_Upsert_Payload`
+        const upsertPayloadType = apitoGraphQLComposedTypeName(
+          resource,
+          'List_Upsert_Payload'
         );
-        const singularPascal = apitoSingularGraphQLTypeName(resource);
+        const listConnectType = apitoGraphQLComposedTypeName(
+          resource,
+          'List_Connect'
+        );
 
         const mutation = gql`
-                  mutation Upsert${listPascal}($payloads: [${upsertPayloadType}!]!, $connect: ${singularPascal}_Relation_Connect_Payload) {
+                  mutation Upsert${listPascal}($payloads: [${upsertPayloadType}!]!, $connect: ${listConnectType}) {
                       upsert${listPascal}(payloads: $payloads, connect: $connect, status: published) {
                           id
                           data {
@@ -847,13 +828,22 @@ const apitoDataProvider = (
           const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
           const deltaUpdate = meta?.deltaUpdate || false;
           const name = apitoSingularGraphQLTypeName(resource);
+          const updatePayload = apitoGraphQLComposedTypeName(resource, 'Update_Payload');
+          const relConn = apitoGraphQLComposedTypeName(
+            resource,
+            'Relation_Connect_Payload'
+          );
+          const relDis = apitoGraphQLComposedTypeName(
+            resource,
+            'Relation_Disconnect_Payload'
+          );
           query = gql`
                       mutation Update${name}(
                           $id: String!,
                           $deltaUpdate: Boolean,
-                          $payload: ${name}_Update_Payload!, 
-                          $connect: ${name}_Relation_Connect_Payload,
-                          $disconnect: ${name}_Relation_Disconnect_Payload
+                          $payload: ${updatePayload}!, 
+                          $connect: ${relConn},
+                          $disconnect: ${relDis}
                       ) {
                           update${name}(_id: $id, deltaUpdate: $deltaUpdate, payload: $payload, connect: $connect, disconnect: $disconnect, status: published) {
                               id
