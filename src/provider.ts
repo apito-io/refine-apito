@@ -827,6 +827,7 @@ const apitoDataProvider = (
         } else {
           const fields = meta?.fields || ['id']; // Fallback to 'id' if fields are not provided
           const deltaUpdate = meta?.deltaUpdate || false;
+          const includeRelations = meta?.relation !== false;
           const name = apitoSingularGraphQLTypeName(resource);
           const updatePayload = apitoGraphQLComposedTypeName(resource, 'Update_Payload');
           const relConn = apitoGraphQLComposedTypeName(
@@ -837,15 +838,21 @@ const apitoDataProvider = (
             resource,
             'Relation_Disconnect_Payload'
           );
+          const relationVarDefs = includeRelations
+            ? `,
+                          $connect: ${relConn},
+                          $disconnect: ${relDis}`
+            : '';
+          const relationArgs = includeRelations
+            ? `, connect: $connect, disconnect: $disconnect`
+            : '';
           query = gql`
                       mutation Update${name}(
                           $id: String!,
                           $deltaUpdate: Boolean,
-                          $payload: ${updatePayload}!, 
-                          $connect: ${relConn},
-                          $disconnect: ${relDis}
+                          $payload: ${updatePayload}!${relationVarDefs}
                       ) {
-                          update${name}(_id: $id, deltaUpdate: $deltaUpdate, payload: $payload, connect: $connect, disconnect: $disconnect, status: published) {
+                          update${name}(_id: $id, deltaUpdate: $deltaUpdate, payload: $payload${relationArgs}, status: published) {
                               id
                               data {
                                   ${fields.join('\n')}
@@ -862,9 +869,15 @@ const apitoDataProvider = (
             id: id,
             deltaUpdate: deltaUpdate,
             payload: (variables as Record<string, any>).data,
-            connect: (variables as Record<string, any>).connect,
-            disconnect: (variables as Record<string, any>).disconnect,
           };
+          if (includeRelations) {
+            (_variables as Record<string, any>).connect = (
+              variables as Record<string, any>
+            ).connect;
+            (_variables as Record<string, any>).disconnect = (
+              variables as Record<string, any>
+            ).disconnect;
+          }
           const response = await client
             .mutation<ResponseType>(query as any, _variables)
             .toPromise();
