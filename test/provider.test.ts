@@ -2,7 +2,12 @@
 
 import { apitoDataProvider } from '../src';
 
-// Simple mock for the Client
+const mutationMock = jest.fn().mockReturnValue({
+    toPromise: jest.fn().mockResolvedValue({
+        data: { upsertFoodCategoryList: [] },
+    }),
+});
+
 jest.mock('@urql/core', () => {
     return {
         Client: jest.fn().mockImplementation(() => ({
@@ -10,29 +15,23 @@ jest.mock('@urql/core', () => {
                 toPromise: jest.fn().mockResolvedValue({
                     data: {
                         productList: [{ id: '1' }],
-                        productListCount: { total: 1 }
-                    }
-                })
+                        productListCount: { total: 1 },
+                    },
+                }),
             }),
-            mutation: jest.fn().mockReturnValue({
-                toPromise: jest.fn().mockResolvedValue({
-                    data: { createProduct: { id: '1' } }
-                })
-            })
+            mutation: (...args: unknown[]) => mutationMock(...args),
         })),
-        CombinedError: jest.fn().mockImplementation(function (opts: any) {
+        gql: jest.requireActual('@urql/core').gql,
+        CombinedError: jest.fn().mockImplementation(function (this: Error, opts: { graphQLErrors?: { message: string }[] }) {
             this.message = opts.graphQLErrors?.[0]?.message || 'Error';
-        })
+        }),
     };
 });
 
 describe('Apito Data Provider', () => {
     const apiUrl = 'https://api.apito.io/secured/graphql';
     const token = 'test-token';
-    const tenant = false;
-    const tokenKey = 'apito_token';
-
-    const provider = apitoDataProvider(apiUrl, token, tenant, tokenKey);
+    const provider = apitoDataProvider(apiUrl, token);
 
     it('should initialize with correct parameters', () => {
         expect(provider.getApiUrl()).toBe(apiUrl);
@@ -48,4 +47,21 @@ describe('Apito Data Provider', () => {
         expect(typeof provider.deleteOne).toBe('function');
         expect(typeof provider.custom).toBe('function');
     });
-}); 
+
+    it('createMany upsert uses Relation_Connect_Payload for $connect', async () => {
+        mutationMock.mockClear();
+        await provider.createMany!({
+            resource: 'foodCategory',
+            variables: [{ _id: '01KRQK3FG2H9Y5RD21N68A41D5', name: 'Desart' }],
+            meta: { fields: ['name'] },
+        });
+
+        const [mutationDoc] = mutationMock.mock.calls[0] as [
+            { loc?: { source: { body: string } } },
+        ];
+        const mutationText = mutationDoc?.loc?.source?.body ?? '';
+
+        expect(mutationText).toContain('Food_Category_Relation_Connect_Payload');
+        expect(mutationText).not.toContain('Food_Category_List_Connect');
+    });
+});

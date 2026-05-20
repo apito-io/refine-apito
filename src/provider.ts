@@ -737,7 +737,7 @@ const apitoDataProvider = (
         );
         const listConnectType = apitoGraphQLComposedTypeName(
           resource,
-          'List_Connect'
+          'Relation_Connect_Payload'
         );
 
         const mutation = gql`
