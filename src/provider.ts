@@ -11,7 +11,7 @@ import {
   GetOneResponse,
   HttpError,
 } from '@refinedev/core';
-import { Client, CombinedError, cacheExchange, fetchExchange, gql } from '@urql/core';
+import { Client, CombinedError, fetchExchange, gql } from '@urql/core';
 import {
   apitoConnectionFilterConditionType,
   apitoGraphQLComposedTypeName,
@@ -227,7 +227,8 @@ const apitoDataProvider = (
 ): ExtendedDataProvider => {
   const client = new Client({
     url: apiUrl,
-    exchanges: [cacheExchange, fetchExchange],
+    exchanges: [fetchExchange],
+    requestPolicy: 'network-only',
     fetchOptions: () => ({
       method: 'POST',
       headers: {
@@ -243,7 +244,8 @@ const apitoDataProvider = (
     getApiClient: () => {
       return new Client({
         url: apiUrl,
-        exchanges: [cacheExchange, fetchExchange],
+        exchanges: [fetchExchange],
+        requestPolicy: 'network-only',
         fetchOptions: () => ({
           method: 'POST',
           headers: {
